@@ -1,0 +1,6 @@
+*.class
+*.ctxt
++libs/
+bluej.pkh
+doc/
+.DS_Store

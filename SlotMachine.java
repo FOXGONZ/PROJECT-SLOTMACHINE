@@ -99,7 +99,7 @@ public class SlotMachine
             addWheel(50);
             return;
         }
-        if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+(pos+1))){
+        if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+pos)){
             return;
         }
         Wheel w=new Wheel(pos);

@@ -95,11 +95,11 @@ public class SlotMachine
             addWheel(1);
             return;
         }
-        if(pos>30){
-            addWheel(30);
+        if(pos>50){
+            addWheel(50);
             return;
         }
-        if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+pos)){
+        if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+(pos+1))){
             return;
         }
         Wheel w=new Wheel(pos);

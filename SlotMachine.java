@@ -204,6 +204,7 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             return;
         }
+        HandleOff();
         w.spin();
         showJackpotState();
         lastActionOk=true;
@@ -216,6 +217,7 @@ public class SlotMachine
         if(!isActionOk(wheels.isEmpty(),"No hay ruedas para girar")){
             return;
         }
+        HandleOff();
         for(Wheel w:wheels){
             w.spin();
         }
@@ -332,11 +334,31 @@ public class SlotMachine
     }
 
     /**
+     * Pauses execution for a number of milliseconds, used for visualization.
+     * @param millis milliseconds to wait.
+     */
+    private void pause(int millis){
+        try{
+            Thread.sleep(millis);
+        }catch(InterruptedException e){
+        }
+    }
+
     /**
      * Updates the visual light according to the winning state of the machine.
      */
     private void showJackpotState(){
         if(isJackpot()){
+            for(int i=3;i>0;i--){
+                winnerLight.changeColor("yellow");
+                pause(120);
+                winnerLight.changeColor("red");
+                pause(120);
+                winnerLight.changeColor("green");
+                pause(120);
+                winnerLight.changeColor("cyan");
+                pause(120);
+            }
             winnerLight.changeColor("yellow");
         }else{
             winnerLight.changeColor("gray");
@@ -442,4 +464,14 @@ public class SlotMachine
         return false;
     }
 
+    /**
+     * Shows how the handle goes down each time a spin is performed.
+     */
+    private void HandleOff(){
+        Tube_Vertical.moveVertical(100);
+        Handle.moveVertical(220);
+        pause(500);
+        Tube_Vertical.moveVertical(-100);
+        Handle.moveVertical(-220);
+    }
 }

@@ -29,7 +29,6 @@ public class SlotMachine
     private Circle Handle;
     private Rectangle winnerLight;
     private Rectangle Base;
-    private String[] symbols;
     private ArrayList<Wheel> wheels;
     private boolean isVisible;
     private boolean lastActionOk;
@@ -39,7 +38,6 @@ public class SlotMachine
      */
     public SlotMachine(){
         wheels=new ArrayList<Wheel>();
-        symbols=new String[0];
         isVisible=false;
         lastActionOk=true;
         createSlotMachine();
@@ -103,9 +101,13 @@ public class SlotMachine
             return;
         }
         Wheel w=new Wheel(pos);
-        for(int i=0;i<symbols.length;i++){
-            if(symbols[i]!=null){
-                w.setSymbol(i,symbols[i]);
+        Wheel source=firstWheel();
+        if(source!=null){
+            String[] cat=source.getSymbolsColor();
+            for(int i=0;i<cat.length;i++){
+                if(cat[i]!=null){
+                    w.setSymbol(i,cat[i]);
+                }
             }
         }
         wheels.add(w);
@@ -140,6 +142,9 @@ public class SlotMachine
         if(!isActionOk(!isValidColor(color),"Color de simbolo no valido: "+color)){
             return;
         }
+        if(!isActionOk(wheels.isEmpty(),"No hay ruedas: agregue una rueda antes de agregar simbolos")){
+            return;
+        }
         if(!isActionOk(contains(color),"El simbolo '"+color+"' ya existe")){
             return;
         }
@@ -150,8 +155,6 @@ public class SlotMachine
         if(!isActionOk(isSlotTaken(index),"La posicion "+pos+" ya esta ocupada")){
             return;
         }
-        symbols=ensureSize(symbols,index+1);
-        symbols[index]=color;
         for(Wheel w:wheels){
             w.setSymbol(index,color);
         }
@@ -166,11 +169,6 @@ public class SlotMachine
     public void delSymbol(String symbol){
         if(!isActionOk(!contains(symbol),"El simbolo '"+symbol+"' no existe")){
             return;
-        }
-        for(int i=0;i<symbols.length;i++){
-            if(symbol.equals(symbols[i])){
-                symbols[i]=null;
-            }
         }
         for(Wheel w:wheels){
             w.delSymbol(symbol);
@@ -230,7 +228,11 @@ public class SlotMachine
      * @return array with the available symbols.
      */
     public String[] symbols(){
-        return symbols.clone();
+        Wheel source=firstWheel();
+        if(source==null){
+            return new String[0];
+        }
+        return source.getSymbolsColor();
     }
 
     /**
@@ -239,7 +241,7 @@ public class SlotMachine
      */
     public int distinctSymbols(){
         int count=0;
-        for(String s:symbols){
+        for(String s:symbols()){
             if(s!=null){
                 count++;
             }
@@ -340,7 +342,7 @@ public class SlotMachine
     private void pause(int millis){
         try{
             Thread.sleep(millis);
-        }catch(InterruptedException e){
+            }catch(InterruptedException e){
         }
     }
 
@@ -395,7 +397,7 @@ public class SlotMachine
      * @return true if it exists; false otherwise.
      */
     private boolean contains(String symbol){
-        for(String s:symbols){
+        for(String s:symbols()){
             if(s!=null&&s.equals(symbol)){
                 return true;
             }
@@ -404,30 +406,27 @@ public class SlotMachine
     }
 
     /**
-     * Tells whether the fixed slot at the given index is already taken.
-     * A slot is taken if it exists in the array and holds a non-null value.
+     * Tells whether the fixed slot at the given index is already taken in the
+     * shared catalog (queried from the first wheel).
      * @param index slot index (base 0).
      * @return true if the slot holds a symbol; false if empty or out of range.
      */
     private boolean isSlotTaken(int index){
-        return index>=0&&index<symbols.length&&symbols[index]!=null;
+        String[] cat=symbols();
+        return index>=0&&index<cat.length&&cat[index]!=null;
     }
 
     /**
-     * Returns an array at least newSize long, copying the original values and
-     * leaving new positions as null (empty slots). If the array is already big
-     * enough, the same array is returned unchanged.
-     * @param base original array.
-     * @param newSize minimum required size.
-     * @return array with at least newSize length.
+     * Returns the first wheel of the machine, used as the source of the shared
+     * symbol catalog. Symbols live in the wheels, so this wheel answers catalog
+     * queries on behalf of the machine.
+     * @return the first wheel, or null if there are no wheels.
      */
-    private String[] ensureSize(String[] base, int newSize){
-        if(base.length>=newSize){
-            return base;
+    private Wheel firstWheel(){
+        if(wheels.isEmpty()){
+            return null;
         }
-        String[] result=new String[newSize];
-        System.arraycopy(base,0,result,0,base.length);
-        return result;
+        return wheels.get(0);
     }
 
     /**
@@ -450,12 +449,19 @@ public class SlotMachine
 
     /**
      * Tells whether a color is valid (supported by the shapes canvas).
+     * Accepts either a 6-digit hexadecimal CSS color (e.g. "#FF00AA"),
+     * which allows any of the millions of colors defined by the CSS
+     * standard, or one of the named colors kept for convenience.
      * @param color color to validate.
      * @return true if the color is valid; false otherwise.
      */
     private boolean isValidColor(String color){
+        if(color!=null&&color.matches("#[0-9a-fA-F]{6}")){
+            return true;
+        }
         String[] valid={"red","blue","green","yellow","magenta",
-                        "orange","pink","cyan","black","white"};
+                        "orange","pink","cyan","black","white",
+                        "gray","lightGray","darkGray"};
         for(String v:valid){
             if(v.equals(color)){
                 return true;
@@ -474,4 +480,5 @@ public class SlotMachine
         Tube_Vertical.moveVertical(-100);
         Handle.moveVertical(-220);
     }
+                        
 }

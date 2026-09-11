@@ -17,14 +17,13 @@ import java.util.ArrayList;
  */
 public class Wheel
 {
-    private ArrayList<String> symbols;   // symbols available in this wheel
+    private ArrayList<Symbol> symbols;   // symbols available in this wheel
     private int position;                // cell of the wheel inside the grid
     private int current;                 // index of the currently visible symbol
     private boolean isVisible;
 
     private Rectangle body;              // frame/body of the wheel
     private Rectangle window;            // window where the symbol is shown
-    private Symbol symbol;               // figure of the visible symbol
 
     private int xBase;                   // x corner of the wheel body
     private int yBase;                   // y corner of the wheel body
@@ -36,6 +35,7 @@ public class Wheel
     private static final int GAP_Y=10;   // vertical gap between wheels
     private static final int ORIGIN_X=150; // left margin of the grid
     private static final int ORIGIN_Y=190; // top margin of the grid
+    
 
     /**
      * Creates a wheel at the given cell.
@@ -43,7 +43,7 @@ public class Wheel
      */
     public Wheel(int pos){
         position=pos;
-        symbols=new ArrayList<String>();
+        symbols=new ArrayList<Symbol>();
         current=-1;
         isVisible=false;
         createWheel(pos);
@@ -70,8 +70,6 @@ public class Wheel
         window.changeSize(HEIGHT-12,WIDTH-12);
         window.moveHorizontal(xBase+6);
         window.moveVertical(yBase+16);
-
-        symbol=null;
     }
 
     /**
@@ -81,16 +79,14 @@ public class Wheel
         isVisible=true;
         body.makeVisible();
         window.makeVisible();
-        refreshSymbol();
+        showCurrent();
     }
 
     /**
      * Makes the wheel and its current symbol invisible.
      */
     public void makeInvisible(){
-        if(symbol!=null){
-            symbol.makeInvisible();
-        }
+        hideCurrent();
         window.makeInvisible();
         body.makeInvisible();
         isVisible=false;
@@ -105,16 +101,26 @@ public class Wheel
         if(next<0){
             return;
         }
+        hideCurrent();
         current=next;
-        refreshSymbol();
+        showCurrent();
     }
 
     /**
      * Returns the wheel slots, including empty ones as null.
      * @return array with the names (colors) of the symbols, null where empty.
      */
-    public String[] symbols(){
-        return symbols.toArray(new String[0]);
+    /**
+     * Returns the colors of the wheel slots, including empty ones as null.
+     * This lets the SlotMachine read the shared catalog from a wheel.
+     * @return array with the colors of the symbols, null where the slot is empty.
+     */
+    public String[] getSymbolsColor(){
+        String[] colors=new String[symbols.size()];
+        for(int i=0;i<symbols.size();i++){
+            colors[i]=symbols.get(i)==null?null:symbols.get(i).getColor();
+        }
+        return colors;
     }
 
     /**
@@ -122,16 +128,18 @@ public class Wheel
      * @return name of the visible symbol, or null if the wheel is empty.
      */
     public String currentSymbol(){
-        if(current<0||current>=symbols.size()){
+        if(current<0||current>=symbols.size()||symbols.get(current)==null){
             return null;
         }
-        return symbols.get(current);
+        return symbols.get(current).getColor();
     }
 
     /**
      * Sets a symbol in the fixed slot at the given index, growing the slot
-     * list with empty slots (null) if needed. If the wheel had no visible
-     * symbol yet, this slot becomes the visible one.
+     * list with empty slots (null) if needed. The Symbol figure is created
+     * right away, but only shown if this slot becomes (or already is) the
+     * visible one. If the wheel had no visible symbol yet, this slot becomes
+     * the visible one.
      * @param index fixed slot index (base 0).
      * @param symbolColor color/name of the symbol to place.
      */
@@ -139,11 +147,13 @@ public class Wheel
         while(symbols.size()<=index){
             symbols.add(null);
         }
-        symbols.set(index,symbolColor);
+        int cx=xBase+WIDTH/2;
+        int cy=yBase+HEIGHT/2;
+        symbols.set(index,new Symbol(symbolColor,cx,cy));
         if(current<0||symbols.get(current)==null){
             current=index;
+            showCurrent();
         }
-        refreshSymbol();
     }
 
     /**
@@ -153,15 +163,16 @@ public class Wheel
      * @param symbolColor color/name of the symbol to remove.
      */
     public void delSymbol(String symbolColor){
-        int idx=symbols.indexOf(symbolColor);
+        int idx=indexOfColor(symbolColor);
         if(!isActionOk(idx<0)){
             return;
         }
+        symbols.get(idx).makeInvisible();
         symbols.set(idx,null);
-        if(current==idx){
+        if(idx==current){
             current=nextOccupied(idx);
+            showCurrent();
         }
-        refreshSymbol();
     }
 
     /**
@@ -169,12 +180,28 @@ public class Wheel
      * @param symbolColor color/name of the symbol to show.
      */
     public void placeSymbol(String symbolColor){
-        int idx=symbols.indexOf(symbolColor);
+        int idx=indexOfColor(symbolColor);
         if(!isActionOk(idx<0)){
             return;
         }
+        hideCurrent();
         current=idx;
-        refreshSymbol();
+        showCurrent();
+    }
+
+    /**
+     * Finds the slot index whose symbol has the given color.
+     * @param symbolColor color/name to search for.
+     * @return index of the matching slot, or -1 if none matches.
+     */
+    private int indexOfColor(String symbolColor){
+        for(int i=0;i<symbols.size();i++){
+            Symbol s=symbols.get(i);
+            if(s!=null&&s.getColor().equals(symbolColor)){
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -197,21 +224,21 @@ public class Wheel
     }
 
     /**
-     * Redraws the visible symbol in the wheel window.
+     * Hides the currently visible symbol figure, if any.
      */
-    private void refreshSymbol(){
-        if(symbol!=null){
-            symbol.makeInvisible();
-            symbol=null;
+    private void hideCurrent(){
+        if(current>=0&&current<symbols.size()&&symbols.get(current)!=null){
+            symbols.get(current).makeInvisible();
         }
-        if(current<0||current>=symbols.size()||symbols.get(current)==null){
-            return;
-        }
-        int cx=xBase+WIDTH/2;
-        int cy=yBase+HEIGHT/2;
-        symbol=new Symbol(symbols.get(current),cx,cy);
-        if(isVisible){
-            symbol.makeVisible();
+    }
+
+    /**
+     * Shows the currently visible symbol figure, only if the wheel itself
+     * is visible.
+     */
+    private void showCurrent(){
+        if(isVisible&&current>=0&&current<symbols.size()&&symbols.get(current)!=null){
+            symbols.get(current).makeVisible();
         }
     }
 
@@ -231,4 +258,9 @@ public class Wheel
     public int getPosition(){
         return position;
     }
-}
+    /**
+     * Moves the wheel to a new grid position, redrawing its body, window and
+     * current symbol at the coordinates of that new cell.
+     * @param newPos new position (cell) of the wheel.
+     */
+    }

@@ -273,4 +273,28 @@ public class Wheel
      * current symbol at the coordinates of that new cell.
      * @param newPos new position (cell) of the wheel.
      */
+    /**
+     * Moves the wheel to a new grid position, redrawing its body, window and
+     * all its symbols at the coordinates of the new cell.
+     * @param newPos new position (cell) of the wheel.
+     */
+    public void moveTo(int newPos){
+        boolean wasVisible=isVisible;
+        String[] colors=getSymbolsColor();
+        int savedCurrent=current;
+        makeInvisible();
+        position=newPos;
+        createWheel(newPos);
+        symbols=new ArrayList<Symbol>();
+        current=-1;
+        for(int i=0;i<colors.length;i++){
+            if(colors[i]!=null){
+                setSymbol(i,colors[i]);
+            }
+        }
+        current=savedCurrent;
+        if(wasVisible){
+            makeVisible();
+        }
     }
+}

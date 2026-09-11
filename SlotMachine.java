@@ -507,5 +507,31 @@ public class SlotMachine
             w.unLock();
         }
     }
-            
+    /**
+     * Swaps the physical positions of two wheels: the wheel at wheel1 moves to
+     * wheel2's cell and vice versa. If either wheel does not exist or is
+     * locked, the swap is not performed and an error is shown.
+     * @param wheel1 position of the first wheel.
+     * @param wheel2 position of the second wheel.
+     */
+    public void swap(int wheel1, int wheel2){
+    Wheel initialWheel=findWheel(wheel1);
+    Wheel finalWheel=findWheel(wheel2);
+    if(!isActionOk(initialWheel==null,"No existe una rueda en la posicion "+wheel1)){
+        return;
+    }
+    if(!isActionOk(finalWheel==null,"No existe una rueda en la posicion "+wheel2)){
+        return;
+    }
+    if(!isActionOk(initialWheel.isLocked(),"La rueda en la posicion "+wheel1+" esta bloqueada")){
+        return;
+    }
+    if(!isActionOk(finalWheel.isLocked(),"La rueda en la posicion "+wheel2+" esta bloqueada")){
+        return;
+    }
+    initialWheel.moveTo(wheel2);
+    finalWheel.moveTo(wheel1);
+    lastActionOk=true;
+    }
+        
 }

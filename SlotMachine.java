@@ -556,5 +556,50 @@ public class SlotMachine
     finalWheel.moveTo(wheel1);
     lastActionOk=true;
     }
-        
+    /**
+     * Positions each wheel on a given symbol without spinning: it calculates
+     * and updates the visible index of each wheel so it shows the requested
+     * symbol. The array holds one color per wheel, ordered by wheel position.
+     * Locked wheels are skipped and left unchanged. If a non-locked wheel does
+     * not contain its requested symbol, an error is shown and no wheel is moved.
+     * @param setSymbols one target color per wheel, ordered by position.
+     */
+    public void spin(String[] setSymbols){
+        if(!isActionOk(setSymbols==null,"El arreglo de simbolos es nulo")){
+            return;
+        }
+        ArrayList<Wheel> ordered=orderedWheels();
+        if(!isActionOk(setSymbols.length!=ordered.size(),
+                "El arreglo debe tener un simbolo por rueda ("+ordered.size()+")")){
+            return;
+        }
+        for(int i=0;i<ordered.size();i++){
+            Wheel w=ordered.get(i);
+            if(w.isLocked()){
+                continue;
+            }
+            if(!wheelHasColor(w,setSymbols[i])){
+                isActionOk(true,"La rueda en la posicion "+w.getPosition()+
+                        " no tiene el simbolo '"+setSymbols[i]+"'");
+                return;
+            }
+        }
+        for(int i=0;i<ordered.size();i++){
+            Wheel w=ordered.get(i);
+            if(!w.isLocked()){
+                w.placeSymbol(setSymbols[i]);
+            }
+        }
+        showJackpotState();
+        lastActionOk=true;
+    }
+    
+    private boolean wheelHasColor(Wheel w, String color){
+        for(String c:w.getSymbolsColor()){
+            if(c!=null&&c.equals(color)){
+                return true;
+            }
+        }
+        return false;
+    }
 }

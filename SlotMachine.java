@@ -485,7 +485,30 @@ public class SlotMachine
         Tube_Vertical.moveVertical(-100);
         Handle.moveVertical(-220);
     }
-        /**
+    /**
+     * Spins a specific wheel several steps, one symbol at a time, with a short
+     * pause between steps to show the movement. The handle is animated once at
+     * the start. If the wheel does not exist or is locked, it does not spin.
+     * @param wheel position of the wheel to spin.
+     * @param steps number of single spins to perform.
+     */
+    public void spin(int wheel,int steps){
+        Wheel w=findWheel(wheel);
+        if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
+            return;
+        }
+        if(w.isLocked()){
+            return;
+        }
+        HandleOff();
+        for(int i=steps;i>0;i--){
+            pause(150);
+            w.spin();
+        }
+        showJackpotState();
+        lastActionOk=true;
+    }
+    /**
      * Locks a wheel so it will not spin or change symbol until unlocked.
      * If no wheel exists at that position, an error is shown.
      * @param wheel position of the wheel to lock.

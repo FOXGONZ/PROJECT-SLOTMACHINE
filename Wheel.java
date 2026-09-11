@@ -36,6 +36,7 @@ public class Wheel
     private static final int ORIGIN_X=150; // left margin of the grid
     private static final int ORIGIN_Y=190; // top margin of the grid
     
+    private boolean isLocked=false;
 
     /**
      * Creates a wheel at the given cell.
@@ -257,6 +258,15 @@ public class Wheel
      */
     public int getPosition(){
         return position;
+    }
+    public boolean isLocked(){
+        return isLocked;
+    }
+    public void lock(){
+        isLocked=true;
+    }
+    public void unLock(){
+        isLocked=false;
     }
     /**
      * Moves the wheel to a new grid position, redrawing its body, window and

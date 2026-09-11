@@ -202,6 +202,9 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             return;
         }
+        if (w.isLocked()){
+            return;
+        }
         HandleOff();
         w.spin();
         showJackpotState();
@@ -217,7 +220,9 @@ public class SlotMachine
         }
         HandleOff();
         for(Wheel w:wheels){
+            if(!w.isLocked()){
             w.spin();
+            }
         }
         showJackpotState();
         lastActionOk=true;
@@ -480,5 +485,27 @@ public class SlotMachine
         Tube_Vertical.moveVertical(-100);
         Handle.moveVertical(-220);
     }
-                        
+        /**
+     * Locks a wheel so it will not spin or change symbol until unlocked.
+     * If no wheel exists at that position, an error is shown.
+     * @param wheel position of the wheel to lock.
+     */
+    public void lock(int wheel){
+        Wheel w=findWheel(wheel);
+        if (isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
+            w.lock();
+        }
+    }
+    /**
+     * Unlocks a wheel so it can spin and change symbol again.
+     * If no wheel exists at that position, an error is shown.
+     * @param wheel position of the wheel to unlock.
+     */
+    public void unLock(int wheel){
+        Wheel w=findWheel(wheel);
+        if (isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
+            w.unLock();
+        }
+    }
+            
 }

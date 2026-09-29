@@ -44,6 +44,49 @@ public class SlotMachine
     }
 
     /**
+     * Creates a slot machine with n wheels and n symbols, randomly initialized.
+     * Symbols are generated as random hex colors (e.g. "#3fae1c") to guarantee
+     * n distinct values even when n exceeds the number of named colors the
+     * shapes package supports. The initial configuration is random, and one
+     * wheel is adjusted to a different symbol so the machine does not already
+     * show a jackpot, as required by the contest problem.
+     * Used as a testing tool for SlotMachineContest.solve(int).
+     * @param n number of wheels and symbols to create.
+     */
+    public SlotMachine(int n){
+        this();
+        if(n<3){
+            n=3;
+        }
+        if(n>50){
+            n=50;
+        }
+        java.util.Random rand=new java.util.Random();
+        java.util.HashSet<String> usedColors=new java.util.HashSet<String>();
+        String[] colors=new String[n];
+        int added=0;
+        while(added<n){
+            String color=String.format("#%06x",rand.nextInt(0x1000000));
+            if(usedColors.add(color)){
+                colors[added]=color;
+                added++;
+            }
+        }
+        for(int i=1;i<=n;i++){
+            addWheel(i);
+        }
+        for(int i=1;i<=n;i++){
+            addSymbol(i,colors[i-1]);
+        }
+        for(int i=1;i<=n;i++){
+            spin(i,rand.nextInt(n));
+        }
+        if(isJackpot()){
+            spin(1,1);
+        }
+    }
+
+    /**
      * Builds the visual representation of the machine body.
      */
     private void createSlotMachine(){

@@ -1,9 +1,9 @@
 import java.util.ArrayList;
 
 /**
- * Soluciona el problema I de la maraton (Slot Machine) usando una SlotMachine
- * como herramienta. Solo puede girar ruedas y preguntar cuantos simbolos
- * distintos se ven, igual que en el problema.
+ * Solves the ICPC marathon problem (Slot Machine) using a SlotMachine as a
+ * tool. It can only rotate wheels and ask how many distinct symbols are shown,
+ * just like in the problem.
  *
  * @author Juan Diego Zorro Gonzalez.
  * @author Ruben Felipe Bustos Carabante.
@@ -11,39 +11,64 @@ import java.util.ArrayList;
  */
 public class SlotMachineContest
 {
+    private SlotMachine machine;
+
+    /**
+     * Default constructor.
+     */
     public SlotMachineContest(){
     }
 
     /**
-     * Resuelve una maquina de n ruedas y n simbolos sin mostrarla y devuelve
-     * las acciones {rueda, pasos} que llevan al jackpot.
-     * @param n numero de ruedas y simbolos.
-     * @return acciones aplicadas, cada una es un par {rueda, pasos}.
+     * Returns the last machine the contest created and solved.
+     * @return the machine used in the last solve or simulate.
+     */
+    public SlotMachine getMachine(){
+        return machine;
+    }
+
+    /**
+     * Solves a machine of n wheels and n symbols without showing it and returns
+     * the actions {wheel, steps} that lead to the jackpot.
+     * @param n number of wheels and symbols.
+     * @return the actions applied, each one a pair {wheel, steps}.
      */
     public int[][] solve(int n){
-        SlotMachine machine=new SlotMachine(n);
+        if(n<1){
+            n=1;
+        }
+        if(n>50){
+            n=50;
+        }
+        machine=new SlotMachine(n);
         machine.makeInvisible();
         return play(machine,n);
     }
 
     /**
-     * Simula la solucion de una maquina de n ruedas y n simbolos mostrandola,
-     * para poder ver los movimientos.
-     * @param n numero de ruedas y simbolos.
+     * Simulates the solution of a machine of n wheels and n symbols showing it,
+     * so the moves can be seen.
+     * @param n number of wheels and symbols.
      */
     public void simulate(int n){
-        SlotMachine machine=new SlotMachine(n);
+        if(n<1){
+            n=1;
+        }
+        if(n>50){
+            n=50;
+        }
+        machine=new SlotMachine(n);
         machine.makeVisible();
         play(machine,n);
     }
 
     /**
-     * Ejecuta la estrategia sobre la maquina y devuelve las acciones. Las
-     * ruedas van de 1 a n. Primero deja todos los simbolos distintos, luego
-     * halla el orden de las ruedas y por ultimo las alinea en el mismo simbolo.
-     * @param m maquina a resolver.
-     * @param n numero de ruedas.
-     * @return acciones {rueda, pasos} realizadas.
+     * Runs the strategy on the machine and returns the actions. Wheels are
+     * numbered 1..n. It first makes all symbols distinct, then finds the order
+     * of the wheels, and finally aligns them on the same symbol.
+     * @param m the machine to solve.
+     * @param n number of wheels.
+     * @return the actions {wheel, steps} performed.
      */
     private int[][] play(SlotMachine m, int n){
         ArrayList<int[]> actions=new ArrayList<int[]>();
@@ -54,8 +79,11 @@ public class SlotMachineContest
     }
 
     /**
-     * Gira cada rueda a la posicion donde se ven mas simbolos distintos, de
-     * modo que al final las n ruedas muestren simbolos diferentes.
+     * Rotates each wheel to the position where the most distinct symbols are
+     * visible, so that at the end the n wheels show different symbols.
+     * @param m the machine.
+     * @param n number of wheels.
+     * @param actions list where the applied actions are recorded.
      */
     private void separateSymbols(SlotMachine m, int n, ArrayList<int[]> actions){
         for(int i=1;i<=n;i++){
@@ -76,10 +104,12 @@ public class SlotMachineContest
     }
 
     /**
-     * Halla el orden ciclico de las ruedas. Gira una rueda un paso adelante y
-     * otra un paso atras; si se siguen viendo n simbolos distintos, la segunda
-     * estaba una posicion adelante de la primera.
-     * @return next[a] = rueda que sigue a la rueda a en el ciclo.
+     * Finds the cyclic order of the wheels. It rotates one wheel one step
+     * forward and another one step backward; if the number of distinct symbols
+     * stays at n, the second wheel was one position ahead of the first.
+     * @param m the machine.
+     * @param n number of wheels.
+     * @return next[a] = the wheel that follows wheel a in the cycle.
      */
     private int[] wheelOrder(SlotMachine m, int n){
         int[] next=new int[n+1];
@@ -104,8 +134,12 @@ public class SlotMachineContest
     }
 
     /**
-     * Recorre el orden ciclico desde la rueda 1 y gira cada rueda hacia atras
-     * segun su distancia, dejando todas en el simbolo de la rueda 1.
+     * Walks the cyclic order from wheel 1 and rotates each wheel backward by its
+     * distance, leaving them all on wheel 1's symbol.
+     * @param m the machine.
+     * @param n number of wheels.
+     * @param next the cyclic order from wheelOrder.
+     * @param actions list where the applied actions are recorded.
      */
     private void alignWheels(SlotMachine m, int n, int[] next, ArrayList<int[]> actions){
         boolean[] done=new boolean[n+1];

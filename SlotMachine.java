@@ -55,8 +55,8 @@ public class SlotMachine
      */
     public SlotMachine(int n){
         this();
-        if(n<3){
-            n=3;
+        if(n<1){
+            n=1;
         }
         if(n>50){
             n=50;

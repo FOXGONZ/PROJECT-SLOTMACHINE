@@ -39,12 +39,12 @@ public class SlotMachineContest
     private int[][] play(SlotMachine m, int n){
         ArrayList<int[]> actions=new ArrayList<int[]>();
         separateSymbols(m,n,actions);
+        int[] next=wheelOrder(m,n);
         return actions.toArray(new int[0][]);
     }
 
     /**
-     * Gira cada rueda a la posicion donde se ven mas simbolos distintos, de
-     * modo que al final las n ruedas muestren simbolos diferentes.
+     * Gira cada rueda a la posicion donde se ven mas simbolos distintos.
      */
     private void separateSymbols(SlotMachine m, int n, ArrayList<int[]> actions){
         for(int i=1;i<=n;i++){
@@ -62,5 +62,32 @@ public class SlotMachineContest
                 actions.add(new int[]{i,best});
             }
         }
+    }
+
+    /**
+     * Halla el orden ciclico de las ruedas comparando pares por rotaciones
+     * opuestas.
+     * @return next[a] = rueda que sigue a la rueda a.
+     */
+    private int[] wheelOrder(SlotMachine m, int n){
+        int[] next=new int[n+1];
+        for(int a=1;a<=n;a++){
+            next[a]=-1;
+            for(int b=1;b<=n;b++){
+                if(a==b){
+                    continue;
+                }
+                m.spin(a,1);
+                m.spin(b,-1);
+                boolean same=(m.distinctSymbols()==n);
+                m.spin(b,1);
+                m.spin(a,-1);
+                if(same){
+                    next[a]=b;
+                    break;
+                }
+            }
+        }
+        return next;
     }
 }

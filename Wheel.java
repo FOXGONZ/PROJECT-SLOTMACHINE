@@ -98,6 +98,9 @@ public class Wheel
      * skipping empty ones. If there are no symbols, it does nothing.
      */
     public void spin(){
+        if(isLocked){
+            return;
+        }
         int next=nextOccupied(current);
         if(next<0){
             return;
@@ -108,9 +111,32 @@ public class Wheel
     }
 
     /**
-     * Returns the wheel slots, including empty ones as null.
-     * @return array with the names (colors) of the symbols, null where empty.
+     * Rotates the wheel a number of steps in either direction. A positive
+     * number advances to the next occupied slots; a negative number goes back.
+     * The wheel does not move if it is locked or has no symbols.
+     * @param steps number of steps to rotate (may be negative).
      */
+    public void spin(int steps){
+        if(isLocked){
+            return;
+        }
+        int n=symbols.size();
+        if(n==0){
+            return;
+        }
+        hideCurrent();
+        int dir=steps>=0?1:-1;
+        int times=Math.abs(steps);
+        for(int t=0;t<times;t++){
+            int next=(dir>0)?nextOccupied(current):prevOccupied(current);
+            if(next<0){
+                break;
+            }
+            current=next;
+        }
+        showCurrent();
+    }
+
     /**
      * Returns the colors of the wheel slots, including empty ones as null.
      * This lets the SlotMachine read the shared catalog from a wheel.
@@ -181,6 +207,9 @@ public class Wheel
      * @param symbolColor color/name of the symbol to show.
      */
     public void placeSymbol(String symbolColor){
+        if(isLocked){
+            return;
+        }
         int idx=indexOfColor(symbolColor);
         if(!isActionOk(idx<0)){
             return;
@@ -225,6 +254,25 @@ public class Wheel
     }
 
     /**
+     * Finds the previous occupied slot before the given one, wrapping around.
+     * @param from slot to start searching before.
+     * @return index of the previous occupied slot, or -1 if none is occupied.
+     */
+    private int prevOccupied(int from){
+        int n=symbols.size();
+        if(n==0){
+            return -1;
+        }
+        for(int step=1;step<=n;step++){
+            int i=((from-step)%n+n)%n;
+            if(symbols.get(i)!=null){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Hides the currently visible symbol figure, if any.
      */
     private void hideCurrent(){
@@ -253,14 +301,28 @@ public class Wheel
     }
 
     /**
+     * Tells whether this wheel has a slot with the given color.
+     * @param color the color to look for.
+     * @return true if the wheel has that color; false otherwise.
+     */
+    public boolean hasColor(String color){
+        return indexOfColor(color)>=0;
+    }
+
+    /**
      * Returns the cell (position) of the wheel.
      * @return position of the wheel.
      */
     public int getPosition(){
         return position;
     }
-    public boolean isLocked(){
-        return isLocked;
+    /**
+     * Tells whether this wheel is allowed to move (spin, be placed or swapped).
+     * A locked wheel cannot move.
+     * @return true if the wheel can move; false if it is locked.
+     */
+    public boolean canMove(){
+        return !isLocked;
     }
     public void lock(){
         isLocked=true;
@@ -268,11 +330,6 @@ public class Wheel
     public void unLock(){
         isLocked=false;
     }
-    /**
-     * Moves the wheel to a new grid position, redrawing its body, window and
-     * current symbol at the coordinates of that new cell.
-     * @param newPos new position (cell) of the wheel.
-     */
     /**
      * Moves the wheel to a new grid position, redrawing its body, window and
      * all its symbols at the coordinates of the new cell.

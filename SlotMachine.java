@@ -44,6 +44,49 @@ public class SlotMachine
     }
 
     /**
+     * Creates a slot machine with n wheels and n symbols, randomly initialized.
+     * Symbols are generated as random hex colors (e.g. "#3fae1c") to guarantee
+     * n distinct values even when n exceeds the number of named colors the
+     * shapes package supports. The initial configuration is random, and one
+     * wheel is adjusted to a different symbol so the machine does not already
+     * show a jackpot, as required by the contest problem.
+     * Used as a testing tool for SlotMachineContest.solve(int).
+     * @param n number of wheels and symbols to create.
+     */
+    public SlotMachine(int n){
+        this();
+        if(n<3){
+            n=3;
+        }
+        if(n>50){
+            n=50;
+        }
+        java.util.Random rand=new java.util.Random();
+        java.util.HashSet<String> usedColors=new java.util.HashSet<String>();
+        String[] colors=new String[n];
+        int added=0;
+        while(added<n){
+            String color=String.format("#%06x",rand.nextInt(0x1000000));
+            if(usedColors.add(color)){
+                colors[added]=color;
+                added++;
+            }
+        }
+        for(int i=1;i<=n;i++){
+            addWheel(i);
+        }
+        for(int i=1;i<=n;i++){
+            addSymbol(i,colors[i-1]);
+        }
+        for(int i=1;i<=n;i++){
+            spin(i,rand.nextInt(n));
+        }
+        if(isJackpot()){
+            spin(1,1);
+        }
+    }
+
+    /**
      * Builds the visual representation of the machine body.
      */
     private void createSlotMachine(){
@@ -202,9 +245,6 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             return;
         }
-        if (w.isLocked()){
-            return;
-        }
         HandleOff();
         w.spin();
         showJackpotState();
@@ -220,9 +260,7 @@ public class SlotMachine
         }
         HandleOff();
         for(Wheel w:wheels){
-            if(!w.isLocked()){
             w.spin();
-            }
         }
         showJackpotState();
         lastActionOk=true;
@@ -244,14 +282,21 @@ public class SlotMachine
      * Returns the number of distinct symbols in the catalog.
      * @return number of distinct symbols.
      */
+    /**
+     * Returns how many distinct symbols are currently visible in the windows,
+     * that is, the number of different colors shown across all wheels. This is
+     * the value a person standing in front of the machine would count, and the
+     * one the contest solver relies on. A jackpot is reached when this is 1.
+     * @return number of distinct symbols currently shown.
+     */
     public int distinctSymbols(){
-        int count=0;
-        for(String s:symbols()){
-            if(s!=null){
-                count++;
+        ArrayList<String> seen=new ArrayList<String>();
+        for(String s:configuration()){
+            if(s!=null&&!seen.contains(s)){
+                seen.add(s);
             }
         }
-        return count;
+        return seen.size();
     }
 
     /**
@@ -497,13 +542,16 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             return;
         }
-        if(w.isLocked()){
-            return;
-        }
-        HandleOff();
-        for(int i=steps;i>0;i--){
-            pause(150);
-            w.spin();
+        if(isVisible){
+            HandleOff();
+            int dir=steps>=0?1:-1;
+            int times=Math.abs(steps);
+            for(int i=0;i<times;i++){
+                pause(150);
+                w.spin(dir);
+            }
+        }else{
+            w.spin(steps);
         }
         showJackpotState();
         lastActionOk=true;
@@ -538,24 +586,25 @@ public class SlotMachine
      * @param wheel2 position of the second wheel.
      */
     public void swap(int wheel1, int wheel2){
-    Wheel initialWheel=findWheel(wheel1);
-    Wheel finalWheel=findWheel(wheel2);
-    if(!isActionOk(initialWheel==null,"No existe una rueda en la posicion "+wheel1)){
-        return;
+        Wheel initialWheel=findWheel(wheel1);
+        Wheel finalWheel=findWheel(wheel2);
+        if(!isActionOk(initialWheel==null,"No existe una rueda en la posicion "+wheel1)){
+            return;
+        }
+        if(!isActionOk(finalWheel==null,"No existe una rueda en la posicion "+wheel2)){
+            return;
+        }
+        if(!isActionOk(!initialWheel.canMove(),"La rueda en la posicion "+wheel1+" esta bloqueada")){
+            return;
+        }
+        if(!isActionOk(!finalWheel.canMove(),"La rueda en la posicion "+wheel2+" esta bloqueada")){
+            return;
+        }
+        initialWheel.moveTo(wheel2);
+        finalWheel.moveTo(wheel1);
+        lastActionOk=true;
     }
-    if(!isActionOk(finalWheel==null,"No existe una rueda en la posicion "+wheel2)){
-        return;
-    }
-    if(!isActionOk(initialWheel.isLocked(),"La rueda en la posicion "+wheel1+" esta bloqueada")){
-        return;
-    }
-    if(!isActionOk(finalWheel.isLocked(),"La rueda en la posicion "+wheel2+" esta bloqueada")){
-        return;
-    }
-    initialWheel.moveTo(wheel2);
-    finalWheel.moveTo(wheel1);
-    lastActionOk=true;
-    }
+
     /**
      * Positions each wheel on a given symbol without spinning: it calculates
      * and updates the visible index of each wheel so it shows the requested
@@ -575,31 +624,15 @@ public class SlotMachine
         }
         for(int i=0;i<ordered.size();i++){
             Wheel w=ordered.get(i);
-            if(w.isLocked()){
-                continue;
-            }
-            if(!wheelHasColor(w,setSymbols[i])){
-                isActionOk(true,"La rueda en la posicion "+w.getPosition()+
-                        " no tiene el simbolo '"+setSymbols[i]+"'");
+            if(!isActionOk(!w.hasColor(setSymbols[i]),"La rueda en la posicion "+
+                    w.getPosition()+" no tiene el simbolo '"+setSymbols[i]+"'")){
                 return;
             }
         }
         for(int i=0;i<ordered.size();i++){
-            Wheel w=ordered.get(i);
-            if(!w.isLocked()){
-                w.placeSymbol(setSymbols[i]);
-            }
+            ordered.get(i).placeSymbol(setSymbols[i]);
         }
         showJackpotState();
         lastActionOk=true;
-    }
-    
-    private boolean wheelHasColor(Wheel w, String color){
-        for(String c:w.getSymbolsColor()){
-            if(c!=null&&c.equals(color)){
-                return true;
-            }
-        }
-        return false;
     }
 }

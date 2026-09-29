@@ -16,9 +16,9 @@ public class SlotMachineContest
 
     /**
      * Resuelve una maquina de n ruedas y n simbolos sin mostrarla y devuelve
-     * las acciones {rueda, pasos}.
+     * las acciones {rueda, pasos} que llevan al jackpot.
      * @param n numero de ruedas y simbolos.
-     * @return acciones aplicadas.
+     * @return acciones aplicadas, cada una es un par {rueda, pasos}.
      */
     public int[][] solve(int n){
         SlotMachine machine=new SlotMachine(n);
@@ -27,7 +27,8 @@ public class SlotMachineContest
     }
 
     /**
-     * Simula la solucion mostrando la maquina.
+     * Simula la solucion de una maquina de n ruedas y n simbolos mostrandola,
+     * para poder ver los movimientos.
      * @param n numero de ruedas y simbolos.
      */
     public void simulate(int n){
@@ -36,15 +37,25 @@ public class SlotMachineContest
         play(machine,n);
     }
 
+    /**
+     * Ejecuta la estrategia sobre la maquina y devuelve las acciones. Las
+     * ruedas van de 1 a n. Primero deja todos los simbolos distintos, luego
+     * halla el orden de las ruedas y por ultimo las alinea en el mismo simbolo.
+     * @param m maquina a resolver.
+     * @param n numero de ruedas.
+     * @return acciones {rueda, pasos} realizadas.
+     */
     private int[][] play(SlotMachine m, int n){
         ArrayList<int[]> actions=new ArrayList<int[]>();
         separateSymbols(m,n,actions);
         int[] next=wheelOrder(m,n);
+        alignWheels(m,n,next,actions);
         return actions.toArray(new int[0][]);
     }
 
     /**
-     * Gira cada rueda a la posicion donde se ven mas simbolos distintos.
+     * Gira cada rueda a la posicion donde se ven mas simbolos distintos, de
+     * modo que al final las n ruedas muestren simbolos diferentes.
      */
     private void separateSymbols(SlotMachine m, int n, ArrayList<int[]> actions){
         for(int i=1;i<=n;i++){
@@ -65,9 +76,10 @@ public class SlotMachineContest
     }
 
     /**
-     * Halla el orden ciclico de las ruedas comparando pares por rotaciones
-     * opuestas.
-     * @return next[a] = rueda que sigue a la rueda a.
+     * Halla el orden ciclico de las ruedas. Gira una rueda un paso adelante y
+     * otra un paso atras; si se siguen viendo n simbolos distintos, la segunda
+     * estaba una posicion adelante de la primera.
+     * @return next[a] = rueda que sigue a la rueda a en el ciclo.
      */
     private int[] wheelOrder(SlotMachine m, int n){
         int[] next=new int[n+1];
@@ -89,5 +101,23 @@ public class SlotMachineContest
             }
         }
         return next;
+    }
+
+    /**
+     * Recorre el orden ciclico desde la rueda 1 y gira cada rueda hacia atras
+     * segun su distancia, dejando todas en el simbolo de la rueda 1.
+     */
+    private void alignWheels(SlotMachine m, int n, int[] next, ArrayList<int[]> actions){
+        boolean[] done=new boolean[n+1];
+        done[1]=true;
+        int node=next[1];
+        int shift=1;
+        while(node!=-1 && node!=1 && !done[node]){
+            m.spin(node,-shift);
+            actions.add(new int[]{node,-shift});
+            done[node]=true;
+            node=next[node];
+            shift++;
+        }
     }
 }

@@ -29,7 +29,12 @@ public class Canvas{
             canvasSingleton = new Canvas("BlueJ Shapes Demo", 1500, 750, 
                                          Color.white);
         }
-        canvasSingleton.setVisible(true);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                canvasSingleton.setVisible(true);
+            }
+        });
         return canvasSingleton;
     }
 
@@ -80,7 +85,12 @@ public class Canvas{
             graphic.fillRect(0, 0, size.width, size.height);
             graphic.setColor(Color.black);
         }
-        frame.setVisible(visible);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                frame.setVisible(visible);
+            }
+        });
     }
 
     /**

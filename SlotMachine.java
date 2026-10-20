@@ -127,29 +127,43 @@ public class SlotMachine
     }
 
     /**
-     * Adds a wheel at the given position.
+     * Adds a normal wheel at the given position.
      * If a wheel already exists at that position, the action is not performed.
      * @param pos position (cell) of the new wheel.
      */
     public void addWheel(int pos){
-        if(pos<1){
-            addWheel(1);
+        addWheel("normal",pos);
+    }
+
+    /**
+     * Adds a wheel of the given type at the given position. It copies the
+     * shared symbol catalog (colors and symbol types) into the new wheel.
+     * If the type is not valid or a wheel already exists at that position,
+     * the action is not performed.
+     * @param type type of wheel: "normal", "rebel", "lefty" or "wild".
+     * @param pos position (cell) of the new wheel.
+     */
+    public void addWheel(String type, int pos){
+        if(!isActionOk(!isOneOf(type,new String[]{"normal","rebel","lefty","wild"}),"Tipo de rueda no valido: "+type)){
             return;
         }
+        if(pos<1){
+            pos=1;
+        }
         if(pos>50){
-            addWheel(50);
-            return;
+            pos=50;
         }
         if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+pos)){
             return;
         }
-        Wheel w=new Wheel(pos);
+        Wheel w=newWheel(type,pos);
         Wheel source=firstWheel();
         if(source!=null){
             String[] cat=source.getSymbolsColor();
+            String[] types=source.getSymbolsType();
             for(int i=0;i<cat.length;i++){
                 if(cat[i]!=null){
-                    w.setSymbol(i,cat[i]);
+                    w.setSymbol(i,cat[i],types[i]);
                 }
             }
         }
@@ -157,6 +171,7 @@ public class SlotMachine
         if(isVisible){
             w.makeVisible();
         }
+        showJackpotState();
         lastActionOk=true;
     }
 
@@ -170,18 +185,37 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+pos)){
             return;
         }
+        if(!isActionOk(!w.remove(),"La rueda en la posicion "+pos+" no se deja eliminar")){
+            return;
+        }
         w.makeInvisible();
         wheels.remove(w);
+        showJackpotState();
         lastActionOk=true;
     }
 
     /**
-     * Adds a symbol (color) to ALL wheels of the machine.
+     * Adds a normal symbol (color) to ALL wheels of the machine.
      * If the color is not valid or the symbol already exists, nothing is done.
-     * @param pos reference position (does not alter the shared catalog).
+     * @param pos slot position (1 = first slot).
      * @param color color of the symbol to add.
      */
     public void addSymbol(int pos, String color){
+        addSymbol("normal",pos,color);
+    }
+
+    /**
+     * Adds a symbol of the given type to ALL wheels of the machine.
+     * If the type or the color is not valid, there are no wheels, the symbol
+     * already exists or the slot is taken, the action is not performed.
+     * @param type type of symbol: "normal", "shy" or "ephemeral".
+     * @param pos slot position (1 = first slot).
+     * @param color color of the symbol to add.
+     */
+    public void addSymbol(String type, int pos, String color){
+        if(!isActionOk(!isOneOf(type,new String[]{"normal","shy","ephemeral"}),"Tipo de simbolo no valido: "+type)){
+            return;
+        }
         if(!isActionOk(!isValidColor(color),"Color de simbolo no valido: "+color)){
             return;
         }
@@ -199,8 +233,9 @@ public class SlotMachine
             return;
         }
         for(Wheel w:wheels){
-            w.setSymbol(index,color);
+            w.setSymbol(index,color,type);
         }
+        showJackpotState();
         lastActionOk=true;
     }
 
@@ -216,6 +251,7 @@ public class SlotMachine
         for(Wheel w:wheels){
             w.delSymbol(symbol);
         }
+        showJackpotState();
         lastActionOk=true;
     }
 
@@ -233,6 +269,7 @@ public class SlotMachine
             return;
         }
         w.placeSymbol(symbol);
+        showJackpotState();
         lastActionOk=true;
     }
 
@@ -364,6 +401,7 @@ public class SlotMachine
         Tube_Vertical.makeInvisible();
         Tube_Horizontal.makeInvisible();
         winnerLight.makeInvisible();
+        Base.makeInvisible();
         Body_SlotMachine.makeInvisible();
         isVisible=false;
         lastActionOk=true;
@@ -390,6 +428,9 @@ public class SlotMachine
      * @param millis milliseconds to wait.
      */
     private void pause(int millis){
+        if(!isVisible){
+            return;
+        }
         try{
             Thread.sleep(millis);
             }catch(InterruptedException e){
@@ -415,6 +456,40 @@ public class SlotMachine
         }else{
             winnerLight.changeColor("gray");
         }
+    }
+
+    /**
+     * Creates a wheel of the given type.
+     * @param type "normal", "rebel", "lefty" or "wild".
+     * @param pos position (cell) of the wheel.
+     * @return the new wheel.
+     */
+    private Wheel newWheel(String type, int pos){
+        if(type.equals("rebel")){
+            return new Rebel(pos);
+        }
+        if(type.equals("lefty")){
+            return new Lefty(pos,wheels);
+        }
+        if(type.equals("wild")){
+            return new WildWheel(pos,wheels);
+        }
+        return new Wheel(pos);
+    }
+
+    /**
+     * Tells whether a value is one of the given options.
+     * @param value value to check.
+     * @param options allowed values.
+     * @return true if value is one of the options; false otherwise.
+     */
+    private boolean isOneOf(String value, String[] options){
+        for(String o:options){
+            if(o.equals(value)){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -594,14 +669,15 @@ public class SlotMachine
         if(!isActionOk(finalWheel==null,"No existe una rueda en la posicion "+wheel2)){
             return;
         }
-        if(!isActionOk(!initialWheel.canMove(),"La rueda en la posicion "+wheel1+" esta bloqueada")){
+        if(!isActionOk(!initialWheel.canSwap(),"La rueda en la posicion "+wheel1+" no se puede mover")){
             return;
         }
-        if(!isActionOk(!finalWheel.canMove(),"La rueda en la posicion "+wheel2+" esta bloqueada")){
+        if(!isActionOk(!finalWheel.canSwap(),"La rueda en la posicion "+wheel2+" no se puede mover")){
             return;
         }
         initialWheel.moveTo(wheel2);
         finalWheel.moveTo(wheel1);
+        showJackpotState();
         lastActionOk=true;
     }
 

@@ -17,9 +17,9 @@ import java.util.ArrayList;
  */
 public class Wheel
 {
-    private ArrayList<Symbol> symbols;   // symbols available in this wheel
-    private int position;                // cell of the wheel inside the grid
-    private int current;                 // index of the currently visible symbol
+    protected ArrayList<Symbol> symbols;   // symbols available in this wheel
+    protected int position;                // cell of the wheel inside the grid
+    protected int current;                 // index of the currently visible symbol
     private boolean isVisible;
 
     private Rectangle body;              // frame/body of the wheel
@@ -36,7 +36,7 @@ public class Wheel
     private static final int ORIGIN_X=150; // left margin of the grid
     private static final int ORIGIN_Y=190; // top margin of the grid
     
-    private boolean isLocked=false;
+    protected boolean isLocked=false;
 
     /**
      * Creates a wheel at the given cell.
@@ -61,7 +61,7 @@ public class Wheel
         yBase=ORIGIN_Y+row*(HEIGHT+GAP_Y);
 
         body=new Rectangle();
-        body.changeColor("lightGray");
+        body.changeColor(frameColor());
         body.changeSize(HEIGHT,WIDTH);
         body.moveHorizontal(xBase);
         body.moveVertical(yBase+10);
@@ -105,38 +105,37 @@ public class Wheel
         if(next<0){
             return;
         }
-        hideCurrent();
-        current=next;
-        showCurrent();
+        landOn(next);
     }
 
     /**
      * Rotates the wheel a number of steps in either direction. A positive
-     * number advances to the next occupied slots; a negative number goes back.
-     * The wheel does not move if it is locked or has no symbols.
+     * number advances to the next occupied slots; a negative number goes back
+     * to the previous ones. The wheel does not move if it is locked or has no
+     * symbols.
      * @param steps number of steps to rotate (may be negative).
      */
     public void spin(int steps){
         if(isLocked){
             return;
         }
-        int n=symbols.size();
-        if(n==0){
+        if(symbols.size()==0){
             return;
         }
-        hideCurrent();
-        int dir=steps>=0?1:-1;
         int times=Math.abs(steps);
         for(int t=0;t<times;t++){
-            int next=(dir>0)?nextOccupied(current):prevOccupied(current);
+            int next=(steps>=0)?nextOccupied(current):prevOccupied(current);
             if(next<0){
-                break;
+                return;
             }
-            current=next;
+            landOn(next);
         }
-        showCurrent();
     }
 
+    /**
+     * Returns the wheel slots, including empty ones as null.
+     * @return array with the names (colors) of the symbols, null where empty.
+     */
     /**
      * Returns the colors of the wheel slots, including empty ones as null.
      * This lets the SlotMachine read the shared catalog from a wheel.
@@ -158,31 +157,45 @@ public class Wheel
         if(current<0||current>=symbols.size()||symbols.get(current)==null){
             return null;
         }
+        if(!symbols.get(current).isShown()){
+            return null;
+        }
         return symbols.get(current).getColor();
+    }
+    /**
+      * Sets a normal symbol in the fixed slot at the given index.
+      * @param index fixed slot index (base 0).
+      * @param symbolColor color/name of the symbol to place.
+      */
+     public void setSymbol(int index, String symbolColor){
+         setSymbol(index,symbolColor,"normal");
     }
 
     /**
-     * Sets a symbol in the fixed slot at the given index, growing the slot
-     * list with empty slots (null) if needed. The Symbol figure is created
-     * right away, but only shown if this slot becomes (or already is) the
-     * visible one. If the wheel had no visible symbol yet, this slot becomes
-     * the visible one.
+     * Sets a symbol of the given type in the fixed slot at the given index,
+     * growing the slot list with empty slots (null) if needed. The Symbol
+     * figure is created right away, but only shown if this slot becomes (or
+     * already is) the visible one. If the wheel had no visible symbol yet,
+     * this slot becomes the visible one.
      * @param index fixed slot index (base 0).
      * @param symbolColor color/name of the symbol to place.
+     * @param type type of symbol: "normal", "shy" or "ephemeral".
      */
-    public void setSymbol(int index, String symbolColor){
+    public void setSymbol(int index, String symbolColor, String type){
         while(symbols.size()<=index){
             symbols.add(null);
         }
         int cx=xBase+WIDTH/2;
         int cy=yBase+HEIGHT/2;
-        symbols.set(index,new Symbol(symbolColor,cx,cy));
+        symbols.set(index,newSymbol(type,symbolColor,cx,cy));
         if(current<0||symbols.get(current)==null){
             current=index;
             showCurrent();
         }
     }
-
+    public boolean remove(){
+        return true;
+    }
     /**
      * Removes a symbol from the wheel, leaving its fixed slot empty (null).
      * If the removed symbol was the visible one, the window moves to the next
@@ -273,6 +286,19 @@ public class Wheel
     }
 
     /**
+     * Moves the window to the given slot. The symbol that lands in the window
+     * turns (a shy symbol hides or shows up, an ephemeral one shrinks; a normal
+     * symbol does nothing) and then it is drawn if it is showing.
+     * @param next slot that becomes the visible one.
+     */
+    private void landOn(int next){
+        hideCurrent();
+        current=next;
+        symbols.get(current).turn();
+        showCurrent();
+    }
+
+    /**
      * Hides the currently visible symbol figure, if any.
      */
     private void hideCurrent(){
@@ -301,6 +327,13 @@ public class Wheel
     }
 
     /**
+     * Returns the cell (position) of the wheel.
+     * @return position of the wheel.
+     */
+    public int getPosition(){
+        return position;
+    }
+    /**
      * Tells whether this wheel has a slot with the given color.
      * @param color the color to look for.
      * @return true if the wheel has that color; false otherwise.
@@ -310,12 +343,13 @@ public class Wheel
     }
 
     /**
-     * Returns the cell (position) of the wheel.
-     * @return position of the wheel.
+     * Tells whether the wheel is locked.
+     * @return true if the wheel is locked; false otherwise.
      */
-    public int getPosition(){
-        return position;
+    public boolean isLocked(){
+        return isLocked;
     }
+
     /**
      * Tells whether this wheel is allowed to move (spin, be placed or swapped).
      * A locked wheel cannot move.
@@ -324,20 +358,48 @@ public class Wheel
     public boolean canMove(){
         return !isLocked;
     }
+    /**
+     * Returns the color of the wheel frame. Each kind of wheel can override
+     * it so it is easy to tell apart on screen. A locked wheel is always
+     * shown dark, whatever its kind.
+     * @return color of the frame.
+     */
+    protected String frameColor(){
+        return "lightGray";
+    }
+
     public void lock(){
         isLocked=true;
+        body.changeColor("darkGray");
+        refreshFront();
     }
     public void unLock(){
         isLocked=false;
+        body.changeColor(frameColor());
+        refreshFront();
+    }
+
+    /**
+     * Redraws the window and the current symbol on top of the body, so that
+     * after the body changes color (for example when locking) the symbol is
+     * not covered by the frame.
+     */
+    private void refreshFront(){
+        if(isVisible){
+            window.makeVisible();
+            showCurrent();
+        }
     }
     /**
      * Moves the wheel to a new grid position, redrawing its body, window and
-     * all its symbols at the coordinates of the new cell.
+     * all its symbols at the coordinates of the new cell. Each symbol keeps
+     * its type (normal, shy or ephemeral).
      * @param newPos new position (cell) of the wheel.
      */
     public void moveTo(int newPos){
         boolean wasVisible=isVisible;
         String[] colors=getSymbolsColor();
+        String[] types=getSymbolsType();
         int savedCurrent=current;
         makeInvisible();
         position=newPos;
@@ -346,7 +408,7 @@ public class Wheel
         current=-1;
         for(int i=0;i<colors.length;i++){
             if(colors[i]!=null){
-                setSymbol(i,colors[i]);
+                setSymbol(i,colors[i],types[i]);
             }
         }
         current=savedCurrent;
@@ -354,4 +416,21 @@ public class Wheel
             makeVisible();
         }
     }
+    private Symbol newSymbol(String type, String color, int cx, int cy){
+        if(type.equals("shy")){ return new Shy(color,cx,cy); }
+        if(type.equals("ephemeral")){ return new Ephemeral(color,cx,cy); }
+        return new Symbol(color,cx,cy);
+    } 
+
+    public String[] getSymbolsType(){
+        String[] types=new String[symbols.size()];
+        for(int i=0;i<symbols.size();i++){
+            types[i]=symbols.get(i)==null?null:symbols.get(i).getType();
+        }
+        return types;
+    } 
+
+    public boolean canSwap(){
+        return !isLocked;
+     }
 }

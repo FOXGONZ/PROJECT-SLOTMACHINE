@@ -33,7 +33,7 @@ public class WildWheel extends Wheel
     @Override
     public String currentSymbol(){
         for(Wheel w:wheels){
-            if(!(w instanceof WildWheel)){
+            if(!w.isWild()){
                 return w.currentSymbol();
             }
         }
@@ -47,5 +47,13 @@ public class WildWheel extends Wheel
     @Override
     protected String frameColor(){
         return "magenta";
+    }
+    /**
+    * Tells whether this wheel is a wild wheel.
+    * @return true: a wild wheel matches any symbol.
+    */
+    @Override
+    public boolean isWild(){
+        return true;
     }
 }

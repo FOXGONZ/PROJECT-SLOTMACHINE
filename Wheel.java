@@ -433,4 +433,12 @@ public class Wheel
     public boolean canSwap(){
         return !isLocked;
      }
+    /**
+    * Tells whether this wheel is a wild wheel, which matches any symbol.
+    * Wild wheels override it to answer true.
+    * @return false for a normal wheel.
+    */
+    public boolean isWild(){
+        return false;
+    }
 }

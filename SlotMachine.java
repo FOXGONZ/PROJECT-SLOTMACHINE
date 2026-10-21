@@ -20,15 +20,12 @@ import javax.swing.JOptionPane;
  */
 public class SlotMachine
 {
-    private int Max_x=1500;
-    private int Max_y=750;
-
-    private Rectangle Body_SlotMachine;
-    private Rectangle Tube_Horizontal;
-    private Rectangle Tube_Vertical;
-    private Circle Handle;
+    private Rectangle body;
+    private Rectangle tubeHorizontal;
+    private Rectangle tubeVertical;
+    private Circle handle;
     private Rectangle winnerLight;
-    private Rectangle Base;
+    private Rectangle base;
     private ArrayList<Wheel> wheels;
     private boolean isVisible;
     private boolean lastActionOk;
@@ -90,11 +87,11 @@ public class SlotMachine
      * Builds the visual representation of the machine body.
      */
     private void createSlotMachine(){
-        Body_SlotMachine=new Rectangle();
-        Body_SlotMachine.changeColor("gray");
-        Body_SlotMachine.changeSize(430,900);
-        Body_SlotMachine.moveHorizontal(20);
-        Body_SlotMachine.moveVertical(150);
+        body=new Rectangle();
+        body.changeColor("gray");
+        body.changeSize(430,900);
+        body.moveHorizontal(20);
+        body.moveVertical(150);
 
         winnerLight=new Rectangle();
         winnerLight.changeColor("gray");
@@ -102,28 +99,28 @@ public class SlotMachine
         winnerLight.moveHorizontal(20);
         winnerLight.moveVertical(160);
 
-        Tube_Horizontal=new Rectangle();
-        Tube_Horizontal.changeColor("lightGray");
-        Tube_Horizontal.changeSize(30,120);
-        Tube_Horizontal.moveHorizontal(920);
-        Tube_Horizontal.moveVertical(330);
+        tubeHorizontal=new Rectangle();
+        tubeHorizontal.changeColor("lightGray");
+        tubeHorizontal.changeSize(30,120);
+        tubeHorizontal.moveHorizontal(920);
+        tubeHorizontal.moveVertical(330);
 
-        Tube_Vertical=new Rectangle();
-        Tube_Vertical.changeColor("lightGray");
-        Tube_Vertical.changeSize(120,30);
-        Tube_Vertical.moveHorizontal(1010);
-        Tube_Vertical.moveVertical(240);
+        tubeVertical=new Rectangle();
+        tubeVertical.changeColor("lightGray");
+        tubeVertical.changeSize(120,30);
+        tubeVertical.moveHorizontal(1010);
+        tubeVertical.moveVertical(240);
 
-        Handle=new Circle();
-        Handle.changeColor("red");
-        Handle.changeSize(60);
-        Handle.moveHorizontal(1045);
-        Handle.moveVertical(200);
+        handle=new Circle();
+        handle.changeColor("red");
+        handle.changeSize(60);
+        handle.moveHorizontal(1045);
+        handle.moveVertical(200);
 
-        Base=new Rectangle();
-        Base.changeColor("grey");
-        Base.changeSize(40,970);
-        Base.moveVertical(580);
+        base=new Rectangle();
+        base.changeColor("black");
+        base.changeSize(40,970);
+        base.moveVertical(580);
     }
 
     /**
@@ -282,7 +279,7 @@ public class SlotMachine
         if(!isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             return;
         }
-        HandleOff();
+        pullHandle();
         w.spin();
         showJackpotState();
         lastActionOk=true;
@@ -295,7 +292,7 @@ public class SlotMachine
         if(!isActionOk(wheels.isEmpty(),"No hay ruedas para girar")){
             return;
         }
-        HandleOff();
+        pullHandle();
         for(Wheel w:wheels){
             w.spin();
         }
@@ -315,10 +312,6 @@ public class SlotMachine
         return source.getSymbolsColor();
     }
 
-    /**
-     * Returns the number of distinct symbols in the catalog.
-     * @return number of distinct symbols.
-     */
     /**
      * Returns how many distinct symbols are currently visible in the windows,
      * that is, the number of different colors shown across all wheels. This is
@@ -377,12 +370,12 @@ public class SlotMachine
      */
     public void makeVisible(){
         isVisible=true;
-        Body_SlotMachine.makeVisible();
+        body.makeVisible();
         winnerLight.makeVisible();
-        Tube_Horizontal.makeVisible();
-        Tube_Vertical.makeVisible();
-        Handle.makeVisible();
-        Base.makeVisible();
+        tubeHorizontal.makeVisible();
+        tubeVertical.makeVisible();
+        handle.makeVisible();
+        base.makeVisible();
         for(Wheel w:wheels){
             w.makeVisible();
         }
@@ -397,12 +390,12 @@ public class SlotMachine
         for(Wheel w:wheels){
             w.makeInvisible();
         }
-        Handle.makeInvisible();
-        Tube_Vertical.makeInvisible();
-        Tube_Horizontal.makeInvisible();
+        handle.makeInvisible();
+        tubeVertical.makeInvisible();
+        tubeHorizontal.makeInvisible();
         winnerLight.makeInvisible();
-        Base.makeInvisible();
-        Body_SlotMachine.makeInvisible();
+        base.makeInvisible();
+        body.makeInvisible();
         isVisible=false;
         lastActionOk=true;
     }
@@ -596,14 +589,15 @@ public class SlotMachine
     }
 
     /**
-     * Shows how the handle goes down each time a spin is performed.
+     * Pulls the handle: shows it going down and back up each time a spin is
+     * performed.
      */
-    private void HandleOff(){
-        Tube_Vertical.moveVertical(100);
-        Handle.moveVertical(220);
+    private void pullHandle(){
+        tubeVertical.moveVertical(100);
+        handle.moveVertical(220);
         pause(500);
-        Tube_Vertical.moveVertical(-100);
-        Handle.moveVertical(-220);
+        tubeVertical.moveVertical(-100);
+        handle.moveVertical(-220);
     }
     /**
      * Spins a specific wheel several steps, one symbol at a time, with a short
@@ -618,7 +612,7 @@ public class SlotMachine
             return;
         }
         if(isVisible){
-            HandleOff();
+            pullHandle();
             int dir=steps>=0?1:-1;
             int times=Math.abs(steps);
             for(int i=0;i<times;i++){
@@ -638,8 +632,9 @@ public class SlotMachine
      */
     public void lock(int wheel){
         Wheel w=findWheel(wheel);
-        if (isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
+        if(isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             w.lock();
+            lastActionOk=true;
         }
     }
     /**
@@ -649,8 +644,9 @@ public class SlotMachine
      */
     public void unLock(int wheel){
         Wheel w=findWheel(wheel);
-        if (isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
+        if(isActionOk(w==null,"No existe una rueda en la posicion "+wheel)){
             w.unLock();
+            lastActionOk=true;
         }
     }
     /**

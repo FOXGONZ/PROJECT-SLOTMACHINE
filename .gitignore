@@ -4,3 +4,8 @@
 bluej.pkh
 doc/
 .DS_Store
+target/
+bin/*
+lib/*
+!bin/.gitkeep
+!lib/.gitkeep

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>edu.eci.dopo</groupId>
+    <artifactId>slotmachine</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>SlotMachine</name>
+    <description>Slot machine simulator (DOPO) with JaCoCo coverage and PMD analysis.</description>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <junit.version>5.10.1</junit.version>
+        <compiler.version>3.11.0</compiler.version>
+        <surefire.version>3.2.5</surefire.version>
+        <jacoco.version>0.8.14</jacoco.version>
+        <pmd.version>3.28.0</pmd.version>
+    </properties>
+
+    <dependencies>
+        <!--
+            JUnit 5 (API + engine). It is not in "test" scope because, as in
+            BlueJ, the tests live in the same folder as the code and are
+            compiled together with it.
+        -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!--
+            Project layout:
+              src/  the code, in two packages (one folder each):
+                    domain/  the slot machine (machine, wheels, symbols,
+                             contest) and the drawing classes of the course
+                             (Canvas, Circle, Rectangle, Triangle)
+                    test/    unit tests and visual acceptance tests
+              bin/  the compiled classes
+              lib/  the libraries (JUnit), copied here by Maven
+            src is the only source folder, so BlueJ, VS Code and Maven see the
+            project the same way.
+        -->
+        <sourceDirectory>src</sourceDirectory>
+        <outputDirectory>bin</outputDirectory>
+
+        <plugins>
+            <!-- mvn clean also empties bin and lib -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>bin</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>lib</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <!-- Copies the libraries the project uses (JUnit) into lib -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-libraries</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Compiles every .java of src (code and tests) into bin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.version}</version>
+            </plugin>
+
+            <!--
+                Runs only the unit tests of the four cycles and of the contest, taken from the
+                compiled classes. The acceptance tests and SlotMachineCC2Test
+                are visual, so they are not run. java.awt.headless=true runs the
+                tests without a screen, so no window is opened.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
+                    <includes>
+                        <include>**/SlotMachineC1Test.java</include>
+                        <include>**/SlotMachineC2Test.java</include>
+                        <include>**/SlotMachineC3Test.java</include>
+                        <include>**/SlotMachineC4Test.java</include>
+                        <include>**/SlotMachineContestTest.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <java.awt.headless>true</java.awt.headless>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!--
+                JaCoCo: test coverage of the domain package. Not measured: the
+                test package itself, and the drawing classes of the course
+                (Canvas, Circle, Rectangle, Triangle): the visual part is not
+                tested.
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>test/**</exclude>
+                        <exclude>domain/Canvas*.class</exclude>
+                        <exclude>domain/Circle.class</exclude>
+                        <exclude>domain/Rectangle.class</exclude>
+                        <exclude>domain/Triangle.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <!-- Attaches the JaCoCo agent before the tests run -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- Writes the report to target/site/jacoco/index.html -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>test/**</exclude>
+                                <exclude>domain/Canvas*.class</exclude>
+                                <exclude>domain/Circle.class</exclude>
+                                <exclude>domain/Rectangle.class</exclude>
+                                <exclude>domain/Triangle.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- Fails the build if line coverage is below 75% -->
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>test/**</exclude>
+                                <exclude>domain/Canvas*.class</exclude>
+                                <exclude>domain/Circle.class</exclude>
+                                <exclude>domain/Rectangle.class</exclude>
+                                <exclude>domain/Triangle.class</exclude>
+                            </excludes>
+                            <haltOnFailure>true</haltOnFailure>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.75</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- PMD: static analysis of every .java file of src -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${pmd.version}</version>
+                <configuration>
+                    <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
+                    <targetJdk>17</targetJdk>
+                    <linkXRef>false</linkXRef>
+                    <rulesets>
+                        <ruleset>/rulesets/java/quickstart.xml</ruleset>
+                    </rulesets>
+                    <!-- Lists the problems in the console but does not break the build -->
+                    <printFailingErrors>true</printFailingErrors>
+                    <failOnViolation>false</failOnViolation>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>cpd-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

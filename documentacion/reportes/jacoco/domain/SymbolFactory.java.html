@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SymbolFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">domain</a> &gt; <span class="el_source">SymbolFactory.java</span></div><h1>SymbolFactory.java</h1><pre class="source lang-java linenums">package domain;
+
+/**
+ * Factory of the symbols of the machine (Factory pattern). It is the only
+ * place that knows which symbol types exist and which class creates each one:
+ * to add a new type of symbol, only this class changes.
+ *
+ * @author Juan Diego Zorro Gonzalez.
+ * @author Ruben Felipe Bustos Carabante.
+ * @version 1.0
+ */
+public final class SymbolFactory
+{
+<span class="fc" id="L14">    private static final String[] TYPES={&quot;normal&quot;,&quot;shy&quot;,&quot;ephemeral&quot;};</span>
+
+    /**
+     * The factory only has static methods, so it is not created.
+     */
+    private SymbolFactory(){
+        // utility class: it is never instantiated
+    }
+
+    /**
+     * Tells whether a symbol type exists.
+     * @param type the type to check.
+     * @return true if it is a known symbol type; false otherwise.
+     */
+    public static boolean isValidType(String type){
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for(String t:TYPES){</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            if(t.equals(type)){</span>
+<span class="fc" id="L31">                return true;</span>
+            }
+        }
+<span class="fc" id="L34">        return false;</span>
+    }
+
+    /**
+     * Creates a symbol of the given type.
+     * @param type type of symbol: &quot;normal&quot;, &quot;shy&quot; or &quot;ephemeral&quot;.
+     * @param color color of the symbol.
+     * @param cx x coordinate of the symbol center.
+     * @param cy y coordinate of the symbol center.
+     * @return the new symbol; a normal symbol if the type is unknown.
+     */
+    public static Symbol create(String type, String color, int cx, int cy){
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if(&quot;shy&quot;.equals(type)){</span>
+<span class="fc" id="L47">            return new Shy(color,cx,cy);</span>
+        }
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if(&quot;ephemeral&quot;.equals(type)){</span>
+<span class="fc" id="L50">            return new Ephemeral(color,cx,cy);</span>
+        }
+<span class="fc" id="L52">        return new Symbol(color,cx,cy);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

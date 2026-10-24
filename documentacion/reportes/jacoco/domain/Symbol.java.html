@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Symbol.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">domain</a> &gt; <span class="el_source">Symbol.java</span></div><h1>Symbol.java</h1><pre class="source lang-java linenums">package domain;
+
+    /**
+ * A symbol of the slot machine.
+ * 
+ * Reuses the components of the shapes project: a symbol is represented
+ * as a colored circle (the color is also the &quot;name&quot; of the symbol, so
+ * different symbols always have different colors).
+ * 
+ * @author : Juan Diego Zorro Gonzalez.
+ * @author : Ruben Felipe Bustos Carabante.
+ * @version 1.0
+ */
+public class Symbol
+{
+    protected Circle figure;
+    private String color;
+
+<span class="fc" id="L19">    protected int SIZE=28;    // circle diameter</span>
+    private static final int START_X=20; // initial x of the Circle in shapes
+    private static final int START_Y=15; // initial y of the Circle in shapes
+    /**
+     * Creates a symbol of a given color, centered at (cx, cy).
+     * @param color color of the symbol (also identifies it).
+     * @param cx x coordinate of the symbol center.
+     * @param cy y coordinate of the symbol center.
+     */
+<span class="fc" id="L28">    public Symbol(String color, int cx, int cy){</span>
+<span class="fc" id="L29">        this.color=color;</span>
+<span class="fc" id="L30">        figure=new Circle();</span>
+<span class="fc" id="L31">        figure.changeSize(SIZE);</span>
+<span class="fc" id="L32">        figure.changeColor(color);</span>
+<span class="fc" id="L33">        figure.moveHorizontal(cx+70-SIZE/2-START_X);</span>
+<span class="fc" id="L34">        figure.moveVertical(cy+20-SIZE/2-START_Y);</span>
+<span class="fc" id="L35">    }</span>
+    
+    /**
+     * Makes the symbol visible.
+     */
+    public void makeVisible(){
+<span class="nc" id="L41">        figure.makeVisible();</span>
+<span class="nc" id="L42">    }</span>
+
+    /**
+     * Makes the symbol invisible.
+     */
+    public void makeInvisible(){
+<span class="fc" id="L48">        figure.makeInvisible();</span>
+<span class="fc" id="L49">    }</span>
+    /**
+     * Returns the type of the symbol.
+     * @return &quot;normal&quot;.
+     */
+    public String getType(){
+<span class="fc" id="L55">        return &quot;normal&quot;;</span>
+    }
+
+    /**
+     * Tells whether the symbol is showing in the window. A normal symbol is
+     * always showing; a shy one can be hiding.
+     * @return true if the symbol is showing.
+     */
+    public boolean isShown(){
+<span class="fc" id="L64">        return true;</span>
+    }
+    /**
+     * Called each time the wheel lands on the symbol. A normal symbol does
+     * not change; Shy and Ephemeral override it.
+     */
+    public void turn(){
+        // a normal symbol does not react when the wheel lands on it
+<span class="fc" id="L72">    }</span>
+
+    /**
+     * Returns the diameter of the symbol.
+     * @return size of the symbol in pixels.
+     */
+    public int getSize(){
+<span class="fc" id="L79">        return SIZE;</span>
+    }
+
+    /**
+     * Returns the color/name of the symbol.
+     * @return color of the symbol.
+     */
+    public String getColor(){
+<span class="fc" id="L87">        return color;</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

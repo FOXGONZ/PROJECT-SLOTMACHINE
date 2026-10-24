@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SlotMachine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">domain</a> &gt; <span class="el_source">SlotMachine.java</span></div><h1>SlotMachine.java</h1><pre class="source lang-java linenums">package domain;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import javax.swing.JOptionPane;
+
+/**
+ * Slot machine (SlotMachine).
+ * 
+ * The machine is organized by wheels (Wheel). Symbols are shared: when a
+ * symbol is added or removed, the change is applied to ALL wheels, so every
+ * wheel shares the same catalog of possible symbols.
+ * 
+ * The main class coordinates and delegates the concrete work to each wheel:
+ * adding/removing symbols, spinning, placing a specific symbol, etc.
+ * 
+ * A spin advances each wheel one position to the next symbol.
+ * spin() spins all wheels; spin(int) spins only the wheel at that position.
+ * 
+ * @author : Juan Diego Zorro Gonzalez.
+ * @author : Ruben Felipe Bustos Carabante.
+ * @version 1.0
+ */
+public class SlotMachine
+{
+    private Rectangle body;
+    private Rectangle tubeHorizontal;
+    private Rectangle tubeVertical;
+    private Circle handle;
+    private Rectangle winnerLight;
+    private Rectangle base;
+    private List&lt;Wheel&gt; wheels;
+    private boolean isVisible;
+    private boolean lastActionOk;
+
+    /**
+     * Creates the slot machine with its visual representation.
+     */
+<span class="fc" id="L42">    public SlotMachine(){</span>
+<span class="fc" id="L43">        wheels=new ArrayList&lt;Wheel&gt;();</span>
+<span class="fc" id="L44">        isVisible=false;</span>
+<span class="fc" id="L45">        lastActionOk=true;</span>
+<span class="fc" id="L46">        createSlotMachine();</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Creates a slot machine with n wheels and n symbols, randomly initialized.
+     * Symbols are generated as random hex colors (e.g. &quot;#3fae1c&quot;) to guarantee
+     * n distinct values even when n exceeds the number of named colors the
+     * shapes package supports. The initial configuration is random, and one
+     * wheel is adjusted to a different symbol so the machine does not already
+     * show a jackpot, as required by the contest problem.
+     * Used as a testing tool for SlotMachineContest.solve(int).
+     * @param n number of wheels and symbols to create.
+     */
+    public SlotMachine(int n){
+<span class="fc" id="L60">        this();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if(n&lt;1){</span>
+<span class="fc" id="L62">            n=1;</span>
+        }
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if(n&gt;50){</span>
+<span class="fc" id="L65">            n=50;</span>
+        }
+<span class="fc" id="L67">        Random rand=new Random();</span>
+<span class="fc" id="L68">        Set&lt;String&gt; usedColors=new HashSet&lt;String&gt;();</span>
+<span class="fc" id="L69">        String[] colors=new String[n];</span>
+<span class="fc" id="L70">        int added=0;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        while(added&lt;n){</span>
+<span class="fc" id="L72">            String color=String.format(&quot;#%06x&quot;,rand.nextInt(0x1000000));</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if(usedColors.add(color)){</span>
+<span class="fc" id="L74">                colors[added]=color;</span>
+<span class="fc" id="L75">                added++;</span>
+            }
+<span class="fc" id="L77">        }</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for(int i=1;i&lt;=n;i++){</span>
+<span class="fc" id="L79">            addWheel(i);</span>
+        }
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for(int i=1;i&lt;=n;i++){</span>
+<span class="fc" id="L82">            addSymbol(i,colors[i-1]);</span>
+        }
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for(int i=1;i&lt;=n;i++){</span>
+<span class="fc" id="L85">            spin(i,rand.nextInt(n));</span>
+        }
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if(isJackpot()){</span>
+<span class="fc" id="L88">            spin(1,1);</span>
+        }
+<span class="fc" id="L90">    }</span>
+
+    /**
+     * Builds the visual representation of the machine body.
+     */
+    private void createSlotMachine(){
+<span class="fc" id="L96">        body=new Rectangle();</span>
+<span class="fc" id="L97">        body.changeColor(&quot;gray&quot;);</span>
+<span class="fc" id="L98">        body.changeSize(430,900);</span>
+<span class="fc" id="L99">        body.moveHorizontal(20);</span>
+<span class="fc" id="L100">        body.moveVertical(150);</span>
+
+<span class="fc" id="L102">        winnerLight=new Rectangle();</span>
+<span class="fc" id="L103">        winnerLight.changeColor(&quot;gray&quot;);</span>
+<span class="fc" id="L104">        winnerLight.changeSize(40,900);</span>
+<span class="fc" id="L105">        winnerLight.moveHorizontal(20);</span>
+<span class="fc" id="L106">        winnerLight.moveVertical(160);</span>
+
+<span class="fc" id="L108">        tubeHorizontal=new Rectangle();</span>
+<span class="fc" id="L109">        tubeHorizontal.changeColor(&quot;lightGray&quot;);</span>
+<span class="fc" id="L110">        tubeHorizontal.changeSize(30,120);</span>
+<span class="fc" id="L111">        tubeHorizontal.moveHorizontal(920);</span>
+<span class="fc" id="L112">        tubeHorizontal.moveVertical(330);</span>
+
+<span class="fc" id="L114">        tubeVertical=new Rectangle();</span>
+<span class="fc" id="L115">        tubeVertical.changeColor(&quot;lightGray&quot;);</span>
+<span class="fc" id="L116">        tubeVertical.changeSize(120,30);</span>
+<span class="fc" id="L117">        tubeVertical.moveHorizontal(1010);</span>
+<span class="fc" id="L118">        tubeVertical.moveVertical(240);</span>
+
+<span class="fc" id="L120">        handle=new Circle();</span>
+<span class="fc" id="L121">        handle.changeColor(&quot;red&quot;);</span>
+<span class="fc" id="L122">        handle.changeSize(60);</span>
+<span class="fc" id="L123">        handle.moveHorizontal(1045);</span>
+<span class="fc" id="L124">        handle.moveVertical(200);</span>
+
+<span class="fc" id="L126">        base=new Rectangle();</span>
+<span class="fc" id="L127">        base.changeColor(&quot;black&quot;);</span>
+<span class="fc" id="L128">        base.changeSize(40,970);</span>
+<span class="fc" id="L129">        base.moveVertical(580);</span>
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Adds a normal wheel at the given position.
+     * If a wheel already exists at that position, the action is not performed.
+     * @param pos position (cell) of the new wheel.
+     */
+    public void addWheel(int pos){
+<span class="fc" id="L138">        addWheel(&quot;normal&quot;,pos);</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * Adds a wheel of the given type at the given position. It copies the
+     * shared symbol catalog (colors and symbol types) into the new wheel.
+     * If the type is not valid or a wheel already exists at that position,
+     * the action is not performed.
+     * @param type type of wheel: &quot;normal&quot;, &quot;rebel&quot;, &quot;lefty&quot; or &quot;wild&quot;.
+     * @param pos position (cell) of the new wheel.
+     */
+    public void addWheel(String type, int pos){
+<span class="fc bfc" id="L150" title="All 4 branches covered.">        if(!isActionOk(!WheelFactory.isValidType(type),&quot;Tipo de rueda no valido: &quot;+type)){</span>
+<span class="fc" id="L151">            return;</span>
+        }
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if(pos&lt;1){</span>
+<span class="fc" id="L154">            pos=1;</span>
+        }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if(pos&gt;50){</span>
+<span class="fc" id="L157">            pos=50;</span>
+        }
+<span class="fc bfc" id="L159" title="All 4 branches covered.">        if(!isActionOk(findWheel(pos)!=null,&quot;Ya existe una rueda en la posicion &quot;+pos)){</span>
+<span class="fc" id="L160">            return;</span>
+        }
+<span class="fc" id="L162">        Wheel w=WheelFactory.create(type,pos,wheels);</span>
+<span class="fc" id="L163">        Wheel source=firstWheel();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        if(source!=null){</span>
+<span class="fc" id="L165">            String[] cat=source.getSymbolsColor();</span>
+<span class="fc" id="L166">            String[] types=source.getSymbolsType();</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            for(int i=0;i&lt;cat.length;i++){</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">                if(cat[i]!=null){</span>
+<span class="fc" id="L169">                    w.setSymbol(i,cat[i],types[i]);</span>
+                }
+            }
+        }
+<span class="fc" id="L173">        wheels.add(w);</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if(isVisible){</span>
+<span class="nc" id="L175">            w.makeVisible();</span>
+        }
+<span class="fc" id="L177">        showJackpotState();</span>
+<span class="fc" id="L178">        lastActionOk=true;</span>
+<span class="fc" id="L179">    }</span>
+
+    /**
+     * Removes the wheel at the given position.
+     * If no wheel exists at that position, the action is not performed.
+     * @param pos position (cell) of the wheel to remove.
+     */
+    public void delWheel(int pos){
+<span class="fc" id="L187">        Wheel w=findWheel(pos);</span>
+<span class="fc bfc" id="L188" title="All 4 branches covered.">        if(!isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+pos)){</span>
+<span class="fc" id="L189">            return;</span>
+        }
+<span class="fc bfc" id="L191" title="All 4 branches covered.">        if(!isActionOk(!w.remove(),&quot;La rueda en la posicion &quot;+pos+&quot; no se deja eliminar&quot;)){</span>
+<span class="fc" id="L192">            return;</span>
+        }
+<span class="fc" id="L194">        w.makeInvisible();</span>
+<span class="fc" id="L195">        wheels.remove(w);</span>
+<span class="fc" id="L196">        showJackpotState();</span>
+<span class="fc" id="L197">        lastActionOk=true;</span>
+<span class="fc" id="L198">    }</span>
+
+    /**
+     * Adds a normal symbol (color) to ALL wheels of the machine.
+     * If the color is not valid or the symbol already exists, nothing is done.
+     * @param pos slot position (1 = first slot).
+     * @param color color of the symbol to add.
+     */
+    public void addSymbol(int pos, String color){
+<span class="fc" id="L207">        addSymbol(&quot;normal&quot;,pos,color);</span>
+<span class="fc" id="L208">    }</span>
+
+    /**
+     * Adds a symbol of the given type to ALL wheels of the machine.
+     * If the type or the color is not valid, there are no wheels, the symbol
+     * already exists or the slot is taken, the action is not performed.
+     * @param type type of symbol: &quot;normal&quot;, &quot;shy&quot; or &quot;ephemeral&quot;.
+     * @param pos slot position (1 = first slot).
+     * @param color color of the symbol to add.
+     */
+    public void addSymbol(String type, int pos, String color){
+<span class="fc bfc" id="L219" title="All 4 branches covered.">        if(!isActionOk(!SymbolFactory.isValidType(type),&quot;Tipo de simbolo no valido: &quot;+type)){</span>
+<span class="fc" id="L220">            return;</span>
+        }
+<span class="fc bfc" id="L222" title="All 4 branches covered.">        if(!isActionOk(!isValidColor(color),&quot;Color de simbolo no valido: &quot;+color)){</span>
+<span class="fc" id="L223">            return;</span>
+        }
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if(!isActionOk(wheels.isEmpty(),&quot;No hay ruedas: agregue una rueda antes de agregar simbolos&quot;)){</span>
+<span class="fc" id="L226">            return;</span>
+        }
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if(!isActionOk(contains(color),&quot;El simbolo '&quot;+color+&quot;' ya existe&quot;)){</span>
+<span class="fc" id="L229">            return;</span>
+        }
+<span class="fc bfc" id="L231" title="All 4 branches covered.">        if(!isActionOk(pos&lt;1,&quot;La posicion debe ser mayor o igual a 1&quot;)){</span>
+<span class="fc" id="L232">            return;</span>
+        }
+<span class="fc" id="L234">        int index=pos-1;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if(!isActionOk(isSlotTaken(index),&quot;La posicion &quot;+pos+&quot; ya esta ocupada&quot;)){</span>
+<span class="fc" id="L236">            return;</span>
+        }
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc" id="L239">            w.setSymbol(index,color,type);</span>
+<span class="fc" id="L240">        }</span>
+<span class="fc" id="L241">        showJackpotState();</span>
+<span class="fc" id="L242">        lastActionOk=true;</span>
+<span class="fc" id="L243">    }</span>
+
+    /**
+     * Removes a symbol (color) from ALL wheels of the machine.
+     * If the symbol does not exist, the action is not performed.
+     * @param symbol color of the symbol to remove.
+     */
+    public void delSymbol(String symbol){
+<span class="fc bfc" id="L251" title="All 4 branches covered.">        if(!isActionOk(!contains(symbol),&quot;El simbolo '&quot;+symbol+&quot;' no existe&quot;)){</span>
+<span class="fc" id="L252">            return;</span>
+        }
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc" id="L255">            w.delSymbol(symbol);</span>
+<span class="fc" id="L256">        }</span>
+<span class="fc" id="L257">        showJackpotState();</span>
+<span class="fc" id="L258">        lastActionOk=true;</span>
+<span class="fc" id="L259">    }</span>
+
+    /**
+     * Fixes a specific symbol as visible in a given wheel.
+     * @param wheel position of the wheel.
+     * @param symbol color of the symbol to show in that wheel.
+     */
+    public void placeSymbol(int wheel, String symbol){
+<span class="fc" id="L267">        Wheel w=findWheel(wheel);</span>
+<span class="fc bfc" id="L268" title="All 4 branches covered.">        if(!isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+wheel)){</span>
+<span class="fc" id="L269">            return;</span>
+        }
+<span class="fc bfc" id="L271" title="All 4 branches covered.">        if(!isActionOk(!contains(symbol),&quot;El simbolo '&quot;+symbol+&quot;' no existe&quot;)){</span>
+<span class="fc" id="L272">            return;</span>
+        }
+<span class="fc" id="L274">        w.placeSymbol(symbol);</span>
+<span class="fc" id="L275">        showJackpotState();</span>
+<span class="fc" id="L276">        lastActionOk=true;</span>
+<span class="fc" id="L277">    }</span>
+
+    /**
+     * Spins a specific wheel one position to the next symbol.
+     * @param wheel position of the wheel to spin.
+     */
+    public void spin(int wheel){
+<span class="fc" id="L284">        Wheel w=findWheel(wheel);</span>
+<span class="fc bfc" id="L285" title="All 4 branches covered.">        if(!isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+wheel)){</span>
+<span class="fc" id="L286">            return;</span>
+        }
+<span class="fc" id="L288">        pullHandle();</span>
+<span class="fc" id="L289">        w.spin();</span>
+<span class="fc" id="L290">        showJackpotState();</span>
+<span class="fc" id="L291">        lastActionOk=true;</span>
+<span class="fc" id="L292">    }</span>
+
+    /**
+     * Spins ALL wheels one position to the next symbol.
+     */
+    public void spin(){
+<span class="fc bfc" id="L298" title="All 2 branches covered.">        if(!isActionOk(wheels.isEmpty(),&quot;No hay ruedas para girar&quot;)){</span>
+<span class="fc" id="L299">            return;</span>
+        }
+<span class="fc" id="L301">        pullHandle();</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc" id="L303">            w.spin();</span>
+<span class="fc" id="L304">        }</span>
+<span class="fc" id="L305">        showJackpotState();</span>
+<span class="fc" id="L306">        lastActionOk=true;</span>
+<span class="fc" id="L307">    }</span>
+
+    /**
+     * Returns the shared symbol catalog of the machine.
+     * @return array with the available symbols.
+     */
+    public String[] symbols(){
+<span class="fc" id="L314">        Wheel source=firstWheel();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if(source==null){</span>
+<span class="fc" id="L316">            return new String[0];</span>
+        }
+<span class="fc" id="L318">        return source.getSymbolsColor();</span>
+    }
+
+    /**
+     * Returns how many distinct symbols are currently visible in the windows,
+     * that is, the number of different colors shown across all wheels. This is
+     * the value a person standing in front of the machine would count, and the
+     * one the contest solver relies on. A jackpot is reached when this is 1.
+     * @return number of distinct symbols currently shown.
+     */
+    public int distinctSymbols(){
+<span class="fc" id="L329">        List&lt;String&gt; seen=new ArrayList&lt;String&gt;();</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">        for(String s:configuration()){</span>
+<span class="pc bpc" id="L331" title="1 of 4 branches missed.">            if(s!=null&amp;&amp;!seen.contains(s)){</span>
+<span class="fc" id="L332">                seen.add(s);</span>
+            }
+        }
+<span class="fc" id="L335">        return seen.size();</span>
+    }
+
+    /**
+     * Returns the current configuration: the visible symbol on each wheel,
+     * ordered by the wheels' positions.
+     * @return array with the visible symbol of each wheel.
+     */
+    public String[] configuration(){
+<span class="fc" id="L344">        String[] config=new String[wheels.size()];</span>
+<span class="fc" id="L345">        int i=0;</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">        for(Wheel w:orderedWheels()){</span>
+<span class="fc" id="L347">            config[i]=w.currentSymbol();</span>
+<span class="fc" id="L348">            i++;</span>
+<span class="fc" id="L349">        }</span>
+<span class="fc" id="L350">        return config;</span>
+    }
+
+    /**
+     * Tells whether the machine is in a winning state (jackpot): every wheel
+     * shows the same symbol and there is at least one wheel with a symbol.
+     * @return true if it is a winning state; false otherwise.
+     */
+    public boolean isJackpot(){
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        if(wheels.isEmpty()){</span>
+<span class="fc" id="L360">            return false;</span>
+        }
+<span class="fc" id="L362">        String first=wheels.get(0).currentSymbol();</span>
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        if(first==null){</span>
+<span class="fc" id="L364">            return false;</span>
+        }
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">            if(!first.equals(w.currentSymbol())){</span>
+<span class="fc" id="L368">                return false;</span>
+            }
+<span class="fc" id="L370">        }</span>
+<span class="fc" id="L371">        return true;</span>
+    }
+
+    /**
+     * Makes the machine and all its wheels visible.
+     */
+    public void makeVisible(){
+<span class="nc" id="L378">        isVisible=true;</span>
+<span class="nc" id="L379">        body.makeVisible();</span>
+<span class="nc" id="L380">        winnerLight.makeVisible();</span>
+<span class="nc" id="L381">        tubeHorizontal.makeVisible();</span>
+<span class="nc" id="L382">        tubeVertical.makeVisible();</span>
+<span class="nc" id="L383">        handle.makeVisible();</span>
+<span class="nc" id="L384">        base.makeVisible();</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">        for(Wheel w:wheels){</span>
+<span class="nc" id="L386">            w.makeVisible();</span>
+<span class="nc" id="L387">        }</span>
+<span class="nc" id="L388">        showJackpotState();</span>
+<span class="nc" id="L389">        lastActionOk=true;</span>
+<span class="nc" id="L390">    }</span>
+
+    /**
+     * Makes the machine and all its wheels invisible.
+     */
+    public void makeInvisible(){
+<span class="fc bfc" id="L396" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc" id="L397">            w.makeInvisible();</span>
+<span class="fc" id="L398">        }</span>
+<span class="fc" id="L399">        handle.makeInvisible();</span>
+<span class="fc" id="L400">        tubeVertical.makeInvisible();</span>
+<span class="fc" id="L401">        tubeHorizontal.makeInvisible();</span>
+<span class="fc" id="L402">        winnerLight.makeInvisible();</span>
+<span class="fc" id="L403">        base.makeInvisible();</span>
+<span class="fc" id="L404">        body.makeInvisible();</span>
+<span class="fc" id="L405">        isVisible=false;</span>
+<span class="fc" id="L406">        lastActionOk=true;</span>
+<span class="fc" id="L407">    }</span>
+
+    /**
+     * Closes the simulator.
+     */
+    public void exit(){
+<span class="nc" id="L413">        makeInvisible();</span>
+<span class="nc" id="L414">        System.exit(0);</span>
+<span class="nc" id="L415">    }</span>
+
+    /**
+     * Tells whether the last performed action was successful.
+     * @return true if the last action was successful; false otherwise.
+     */
+    public boolean ok(){
+<span class="fc" id="L422">        return lastActionOk;</span>
+    }
+
+    /**
+     * Pauses execution for a number of milliseconds, used for visualization.
+     * @param millis milliseconds to wait.
+     */
+    private void pause(int millis){
+<span class="pc bpc" id="L430" title="1 of 2 branches missed.">        if(!isVisible){</span>
+<span class="fc" id="L431">            return;</span>
+        }
+        try{
+<span class="nc" id="L434">            Thread.sleep(millis);</span>
+<span class="nc" id="L435">            }catch(InterruptedException e){</span>
+<span class="nc" id="L436">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L437">        }</span>
+<span class="nc" id="L438">    }</span>
+
+    /**
+     * Updates the visual light according to the winning state of the machine.
+     */
+    private void showJackpotState(){
+<span class="fc bfc" id="L444" title="All 2 branches covered.">        if(isJackpot()){</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            for(int i=3;i&gt;0;i--){</span>
+<span class="fc" id="L446">                winnerLight.changeColor(&quot;yellow&quot;);</span>
+<span class="fc" id="L447">                pause(120);</span>
+<span class="fc" id="L448">                winnerLight.changeColor(&quot;red&quot;);</span>
+<span class="fc" id="L449">                pause(120);</span>
+<span class="fc" id="L450">                winnerLight.changeColor(&quot;green&quot;);</span>
+<span class="fc" id="L451">                pause(120);</span>
+<span class="fc" id="L452">                winnerLight.changeColor(&quot;cyan&quot;);</span>
+<span class="fc" id="L453">                pause(120);</span>
+            }
+<span class="fc" id="L455">            winnerLight.changeColor(&quot;yellow&quot;);</span>
+        }else{
+<span class="fc" id="L457">            winnerLight.changeColor(&quot;gray&quot;);</span>
+        }
+<span class="fc" id="L459">    }</span>
+
+    /**
+     * Finds the wheel at a given position.
+     * @param pos position searched.
+     * @return the wheel found, or null if it does not exist.
+     */
+    private Wheel findWheel(int pos){
+<span class="fc bfc" id="L467" title="All 2 branches covered.">        for(Wheel w:wheels){</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">            if(w.getPosition()==pos){</span>
+<span class="fc" id="L469">                return w;</span>
+            }
+<span class="fc" id="L471">        }</span>
+<span class="fc" id="L472">        return null;</span>
+    }
+
+    /**
+     * Returns the wheels ordered by their position (cell).
+     * @return list of wheels ordered by ascending position.
+     */
+    private List&lt;Wheel&gt; orderedWheels(){
+<span class="fc" id="L480">        List&lt;Wheel&gt; ordered=new ArrayList&lt;Wheel&gt;(wheels);</span>
+<span class="fc" id="L481">        ordered.sort((a,b)-&gt;Integer.compare(a.getPosition(),b.getPosition()));</span>
+<span class="fc" id="L482">        return ordered;</span>
+    }
+
+    /**
+     * Tells whether the shared catalog contains a symbol.
+     * @param symbol symbol searched.
+     * @return true if it exists; false otherwise.
+     */
+    private boolean contains(String symbol){
+<span class="fc bfc" id="L491" title="All 2 branches covered.">        for(String s:symbols()){</span>
+<span class="fc bfc" id="L492" title="All 4 branches covered.">            if(s!=null&amp;&amp;s.equals(symbol)){</span>
+<span class="fc" id="L493">                return true;</span>
+            }
+        }
+<span class="fc" id="L496">        return false;</span>
+    }
+
+    /**
+     * Tells whether the fixed slot at the given index is already taken in the
+     * shared catalog (queried from the first wheel).
+     * @param index slot index (base 0).
+     * @return true if the slot holds a symbol; false if empty or out of range.
+     */
+    private boolean isSlotTaken(int index){
+<span class="fc" id="L506">        String[] cat=symbols();</span>
+<span class="pc bpc" id="L507" title="2 of 6 branches missed.">        return index&gt;=0&amp;&amp;index&lt;cat.length&amp;&amp;cat[index]!=null;</span>
+    }
+
+    /**
+     * Returns the first wheel of the machine, used as the source of the shared
+     * symbol catalog. Symbols live in the wheels, so this wheel answers catalog
+     * queries on behalf of the machine.
+     * @return the first wheel, or null if there are no wheels.
+     */
+    private Wheel firstWheel(){
+<span class="fc bfc" id="L517" title="All 2 branches covered.">        if(wheels.isEmpty()){</span>
+<span class="fc" id="L518">            return null;</span>
+        }
+<span class="fc" id="L520">        return wheels.get(0);</span>
+    }
+
+    /**
+     * Checks whether an action is valid. If not, it shows a message through
+     * JOptionPane only if the simulator is visible.
+     * @param invalid condition that invalidates the action (true=not valid).
+     * @param message message to show to the user if the action is not valid.
+     * @return true if the action can be performed; false otherwise.
+     */
+    private boolean isActionOk(boolean invalid, String message){
+<span class="fc bfc" id="L531" title="All 2 branches covered.">        if(invalid){</span>
+<span class="fc" id="L532">            lastActionOk=false;</span>
+<span class="pc bpc" id="L533" title="1 of 2 branches missed.">            if(isVisible){</span>
+<span class="nc" id="L534">                JOptionPane.showMessageDialog(null,message);</span>
+            }
+<span class="fc" id="L536">            return false;</span>
+        }
+<span class="fc" id="L538">        return true;</span>
+    }
+
+    /**
+     * Tells whether a color is valid (supported by the shapes canvas).
+     * Accepts either a 6-digit hexadecimal CSS color (e.g. &quot;#FF00AA&quot;),
+     * which allows any of the millions of colors defined by the CSS
+     * standard, or one of the named colors kept for convenience.
+     * @param color color to validate.
+     * @return true if the color is valid; false otherwise.
+     */
+    private boolean isValidColor(String color){
+<span class="fc bfc" id="L550" title="All 4 branches covered.">        if(color!=null&amp;&amp;color.matches(&quot;#[0-9a-fA-F]{6}&quot;)){</span>
+<span class="fc" id="L551">            return true;</span>
+        }
+<span class="fc" id="L553">        String[] valid={&quot;red&quot;,&quot;blue&quot;,&quot;green&quot;,&quot;yellow&quot;,&quot;magenta&quot;,</span>
+                        &quot;orange&quot;,&quot;pink&quot;,&quot;cyan&quot;,&quot;black&quot;,&quot;white&quot;,
+                        &quot;gray&quot;,&quot;lightGray&quot;,&quot;darkGray&quot;};
+<span class="fc bfc" id="L556" title="All 2 branches covered.">        for(String v:valid){</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">            if(v.equals(color)){</span>
+<span class="fc" id="L558">                return true;</span>
+            }
+        }
+<span class="fc" id="L561">        return false;</span>
+    }
+
+    /**
+     * Pulls the handle: shows it going down and back up each time a spin is
+     * performed.
+     */
+    private void pullHandle(){
+<span class="fc" id="L569">        tubeVertical.moveVertical(100);</span>
+<span class="fc" id="L570">        handle.moveVertical(220);</span>
+<span class="fc" id="L571">        pause(500);</span>
+<span class="fc" id="L572">        tubeVertical.moveVertical(-100);</span>
+<span class="fc" id="L573">        handle.moveVertical(-220);</span>
+<span class="fc" id="L574">    }</span>
+    /**
+     * Spins a specific wheel several steps, one symbol at a time, with a short
+     * pause between steps to show the movement. The handle is animated once at
+     * the start. If the wheel does not exist or is locked, it does not spin.
+     * @param wheel position of the wheel to spin.
+     * @param steps number of single spins to perform.
+     */
+    public void spin(int wheel,int steps){
+<span class="fc" id="L583">        Wheel w=findWheel(wheel);</span>
+<span class="fc bfc" id="L584" title="All 4 branches covered.">        if(!isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+wheel)){</span>
+<span class="fc" id="L585">            return;</span>
+        }
+<span class="pc bpc" id="L587" title="1 of 2 branches missed.">        if(isVisible){</span>
+<span class="nc" id="L588">            pullHandle();</span>
+<span class="nc bnc" id="L589" title="All 2 branches missed.">            int dir=steps&gt;=0?1:-1;</span>
+<span class="nc" id="L590">            int times=Math.abs(steps);</span>
+<span class="nc bnc" id="L591" title="All 2 branches missed.">            for(int i=0;i&lt;times;i++){</span>
+<span class="nc" id="L592">                pause(150);</span>
+<span class="nc" id="L593">                w.spin(dir);</span>
+            }
+<span class="nc" id="L595">        }else{</span>
+<span class="fc" id="L596">            w.spin(steps);</span>
+        }
+<span class="fc" id="L598">        showJackpotState();</span>
+<span class="fc" id="L599">        lastActionOk=true;</span>
+<span class="fc" id="L600">    }</span>
+    /**
+     * Locks a wheel so it will not spin or change symbol until unlocked.
+     * If no wheel exists at that position, an error is shown.
+     * @param wheel position of the wheel to lock.
+     */
+    public void lock(int wheel){
+<span class="fc" id="L607">        Wheel w=findWheel(wheel);</span>
+<span class="fc bfc" id="L608" title="All 4 branches covered.">        if(isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+wheel)){</span>
+<span class="fc" id="L609">            w.lock();</span>
+<span class="fc" id="L610">            lastActionOk=true;</span>
+        }
+<span class="fc" id="L612">    }</span>
+    /**
+     * Unlocks a wheel so it can spin and change symbol again.
+     * If no wheel exists at that position, an error is shown.
+     * @param wheel position of the wheel to unlock.
+     */
+    public void unLock(int wheel){
+<span class="fc" id="L619">        Wheel w=findWheel(wheel);</span>
+<span class="fc bfc" id="L620" title="All 4 branches covered.">        if(isActionOk(w==null,&quot;No existe una rueda en la posicion &quot;+wheel)){</span>
+<span class="fc" id="L621">            w.unLock();</span>
+<span class="fc" id="L622">            lastActionOk=true;</span>
+        }
+<span class="fc" id="L624">    }</span>
+    /**
+     * Swaps the physical positions of two wheels: the wheel at wheel1 moves to
+     * wheel2's cell and vice versa. If either wheel does not exist or is
+     * locked, the swap is not performed and an error is shown.
+     * @param wheel1 position of the first wheel.
+     * @param wheel2 position of the second wheel.
+     */
+    public void swap(int wheel1, int wheel2){
+<span class="fc" id="L633">        Wheel initialWheel=findWheel(wheel1);</span>
+<span class="fc" id="L634">        Wheel finalWheel=findWheel(wheel2);</span>
+<span class="pc bpc" id="L635" title="2 of 4 branches missed.">        if(!isActionOk(initialWheel==null,&quot;No existe una rueda en la posicion &quot;+wheel1)){</span>
+<span class="nc" id="L636">            return;</span>
+        }
+<span class="fc bfc" id="L638" title="All 4 branches covered.">        if(!isActionOk(finalWheel==null,&quot;No existe una rueda en la posicion &quot;+wheel2)){</span>
+<span class="fc" id="L639">            return;</span>
+        }
+<span class="fc bfc" id="L641" title="All 4 branches covered.">        if(!isActionOk(!initialWheel.canSwap(),&quot;La rueda en la posicion &quot;+wheel1+&quot; no se puede mover&quot;)){</span>
+<span class="fc" id="L642">            return;</span>
+        }
+<span class="fc bfc" id="L644" title="All 4 branches covered.">        if(!isActionOk(!finalWheel.canSwap(),&quot;La rueda en la posicion &quot;+wheel2+&quot; no se puede mover&quot;)){</span>
+<span class="fc" id="L645">            return;</span>
+        }
+<span class="fc" id="L647">        initialWheel.moveTo(wheel2);</span>
+<span class="fc" id="L648">        finalWheel.moveTo(wheel1);</span>
+<span class="fc" id="L649">        showJackpotState();</span>
+<span class="fc" id="L650">        lastActionOk=true;</span>
+<span class="fc" id="L651">    }</span>
+
+    /**
+     * Positions each wheel on a given symbol without spinning: it calculates
+     * and updates the visible index of each wheel so it shows the requested
+     * symbol. The array holds one color per wheel, ordered by wheel position.
+     * Locked wheels are skipped and left unchanged. If a non-locked wheel does
+     * not contain its requested symbol, an error is shown and no wheel is moved.
+     * @param setSymbols one target color per wheel, ordered by position.
+     */
+    public void spin(String[] setSymbols){
+<span class="fc bfc" id="L662" title="All 4 branches covered.">        if(!isActionOk(setSymbols==null,&quot;El arreglo de simbolos es nulo&quot;)){</span>
+<span class="fc" id="L663">            return;</span>
+        }
+<span class="fc" id="L665">        List&lt;Wheel&gt; ordered=orderedWheels();</span>
+<span class="fc bfc" id="L666" title="All 4 branches covered.">        if(!isActionOk(setSymbols.length!=ordered.size(),</span>
+<span class="fc" id="L667">                &quot;El arreglo debe tener un simbolo por rueda (&quot;+ordered.size()+&quot;)&quot;)){</span>
+<span class="fc" id="L668">            return;</span>
+        }
+<span class="fc bfc" id="L670" title="All 2 branches covered.">        for(int i=0;i&lt;ordered.size();i++){</span>
+<span class="fc" id="L671">            Wheel w=ordered.get(i);</span>
+<span class="fc bfc" id="L672" title="All 4 branches covered.">            if(!isActionOk(!w.hasColor(setSymbols[i]),&quot;La rueda en la posicion &quot;+</span>
+<span class="fc" id="L673">                    w.getPosition()+&quot; no tiene el simbolo '&quot;+setSymbols[i]+&quot;'&quot;)){</span>
+<span class="fc" id="L674">                return;</span>
+            }
+        }
+<span class="fc bfc" id="L677" title="All 2 branches covered.">        for(int i=0;i&lt;ordered.size();i++){</span>
+<span class="fc" id="L678">            ordered.get(i).placeSymbol(setSymbols[i]);</span>
+        }
+<span class="fc" id="L680">        showJackpotState();</span>
+<span class="fc" id="L681">        lastActionOk=true;</span>
+<span class="fc" id="L682">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

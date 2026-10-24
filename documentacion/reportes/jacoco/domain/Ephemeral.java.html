@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Ephemeral.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">domain</a> &gt; <span class="el_source">Ephemeral.java</span></div><h1>Ephemeral.java</h1><pre class="source lang-java linenums">package domain;
+
+/**
+ * An ephemeral symbol. Each time it lands in the window of its wheel it gets
+ * smaller, staying centered, until it reaches a minimum size.
+ *
+ * @author Juan Diego Zorro Gonzalez.
+ * @author Ruben Felipe Bustos Carabante.
+ * @version 1.0
+ */
+public class Ephemeral extends Symbol
+{
+    private static final int MIN_SIZE=1;
+    private static final int STEP=2;
+
+    /**
+     * Creates an ephemeral symbol of a given color, centered at (cx, cy).
+     * @param color color of the symbol (also identifies it).
+     * @param cx x coordinate of the symbol center.
+     * @param cy y coordinate of the symbol center.
+     */
+    public Ephemeral(String color, int cx, int cy){
+<span class="fc" id="L23">        super(color,cx,cy);</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Returns the type of this symbol.
+     * @return &quot;ephemeral&quot;.
+     */
+    @Override
+    public String getType(){
+<span class="fc" id="L32">        return &quot;ephemeral&quot;;</span>
+    }
+
+    /**
+     * Shrinks the symbol by STEP pixels, moving it so it stays centered. It
+     * does nothing if it would get smaller than MIN_SIZE.
+     */
+    @Override
+    public void turn(){
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if(SIZE-STEP&lt;MIN_SIZE){</span>
+<span class="fc" id="L42">            return;</span>
+        }
+<span class="fc" id="L44">        SIZE=SIZE-STEP;</span>
+<span class="fc" id="L45">        figure.changeSize(SIZE);</span>
+<span class="fc" id="L46">        figure.moveHorizontal(STEP/2);</span>
+<span class="fc" id="L47">        figure.moveVertical(STEP/2);</span>
+<span class="fc" id="L48">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

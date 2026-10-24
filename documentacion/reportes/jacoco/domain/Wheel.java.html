@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Wheel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SlotMachine</a> &gt; <a href="index.source.html" class="el_package">domain</a> &gt; <span class="el_source">Wheel.java</span></div><h1>Wheel.java</h1><pre class="source lang-java linenums">package domain;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A wheel (Wheel) of the slot machine.
+ * 
+ * Each wheel has a position inside the machine and shows a window with one
+ * visible symbol at a given moment. The position is interpreted as a cell
+ * of a grid of COLS columns: the column is (pos-1)%COLS and the row is
+ * (pos-1)/COLS. All wheels share the same catalog of possible symbols; what
+ * changes between them is which one is in the window.
+ * 
+ * The spin() method advances the wheel one position to the next symbol.
+ * 
+ * @author : Juan Diego Zorro Gonzalez.
+ * @author : Ruben Felipe Bustos Carabante.
+ * @version 1.0
+ */
+public class Wheel
+{
+    protected List&lt;Symbol&gt; symbols;   // symbols available in this wheel
+    protected int position;                // cell of the wheel inside the grid
+    protected int current;                 // index of the currently visible symbol
+    private boolean isVisible;
+
+    private Rectangle body;              // frame/body of the wheel
+    private Rectangle window;            // window where the symbol is shown
+
+    private int xBase;                   // x corner of the wheel body
+    private int yBase;                   // y corner of the wheel body
+
+    private static final int COLS=10;    // grid columns
+    private static final int WIDTH=48;   // wheel body width
+    private static final int HEIGHT=56;  // wheel body height
+    private static final int GAP_X=8;    // horizontal gap between wheels
+    private static final int GAP_Y=10;   // vertical gap between wheels
+    private static final int ORIGIN_X=150; // left margin of the grid
+    private static final int ORIGIN_Y=190; // top margin of the grid
+    
+<span class="fc" id="L42">    protected boolean isLocked=false;</span>
+
+    /**
+     * Creates a wheel at the given cell.
+     * @param pos position (cell) of the wheel inside the grid.
+     */
+<span class="fc" id="L48">    public Wheel(int pos){</span>
+<span class="fc" id="L49">        position=pos;</span>
+<span class="fc" id="L50">        symbols=new ArrayList&lt;Symbol&gt;();</span>
+<span class="fc" id="L51">        current=-1;</span>
+<span class="fc" id="L52">        isVisible=false;</span>
+<span class="fc" id="L53">        createWheel(pos);</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * Builds the visual representation of the wheel from its cell.
+     * @param pos position (cell) of the wheel.
+     */
+    private void createWheel(int pos){
+<span class="fc" id="L61">        int col=(pos-1)%COLS;</span>
+<span class="fc" id="L62">        int row=(pos-1)/COLS;</span>
+<span class="fc" id="L63">        xBase=ORIGIN_X+col*(WIDTH+GAP_X);</span>
+<span class="fc" id="L64">        yBase=ORIGIN_Y+row*(HEIGHT+GAP_Y);</span>
+
+<span class="fc" id="L66">        body=new Rectangle();</span>
+<span class="fc" id="L67">        body.changeColor(frameColor());</span>
+<span class="fc" id="L68">        body.changeSize(HEIGHT,WIDTH);</span>
+<span class="fc" id="L69">        body.moveHorizontal(xBase);</span>
+<span class="fc" id="L70">        body.moveVertical(yBase+10);</span>
+
+<span class="fc" id="L72">        window=new Rectangle();</span>
+<span class="fc" id="L73">        window.changeColor(&quot;white&quot;);</span>
+<span class="fc" id="L74">        window.changeSize(HEIGHT-12,WIDTH-12);</span>
+<span class="fc" id="L75">        window.moveHorizontal(xBase+6);</span>
+<span class="fc" id="L76">        window.moveVertical(yBase+16);</span>
+<span class="fc" id="L77">    }</span>
+
+    /**
+     * Makes the wheel and its current symbol visible.
+     */
+    public void makeVisible(){
+<span class="nc" id="L83">        isVisible=true;</span>
+<span class="nc" id="L84">        body.makeVisible();</span>
+<span class="nc" id="L85">        window.makeVisible();</span>
+<span class="nc" id="L86">        showCurrent();</span>
+<span class="nc" id="L87">    }</span>
+
+    /**
+     * Makes the wheel and its current symbol invisible.
+     */
+    public void makeInvisible(){
+<span class="fc" id="L93">        hideCurrent();</span>
+<span class="fc" id="L94">        window.makeInvisible();</span>
+<span class="fc" id="L95">        body.makeInvisible();</span>
+<span class="fc" id="L96">        isVisible=false;</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Spins the wheel one position: advances to the next occupied slot,
+     * skipping empty ones. If there are no symbols, it does nothing.
+     */
+    public void spin(){
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if(isLocked){</span>
+<span class="fc" id="L105">            return;</span>
+        }
+<span class="fc" id="L107">        int next=nextOccupied(current);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if(next&lt;0){</span>
+<span class="fc" id="L109">            return;</span>
+        }
+<span class="fc" id="L111">        landOn(next);</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Rotates the wheel a number of steps in either direction. A positive
+     * number advances to the next occupied slots; a negative number goes back
+     * to the previous ones. The wheel does not move if it is locked or has no
+     * symbols.
+     * @param steps number of steps to rotate (may be negative).
+     */
+    public void spin(int steps){
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if(isLocked){</span>
+<span class="fc" id="L123">            return;</span>
+        }
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if(symbols.isEmpty()){</span>
+<span class="fc" id="L126">            return;</span>
+        }
+<span class="fc" id="L128">        int times=Math.abs(steps);</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        for(int t=0;t&lt;times;t++){</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            int next=(steps&gt;=0)?nextOccupied(current):prevOccupied(current);</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if(next&lt;0){</span>
+<span class="fc" id="L132">                return;</span>
+            }
+<span class="fc" id="L134">            landOn(next);</span>
+        }
+<span class="fc" id="L136">    }</span>
+
+    /**
+     * Returns the colors of the wheel slots, including empty ones as null.
+     * This lets the SlotMachine read the shared catalog from a wheel.
+     * @return array with the colors of the symbols, null where the slot is empty.
+     */
+    public String[] getSymbolsColor(){
+<span class="fc" id="L144">        String[] colors=new String[symbols.size()];</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        for(int i=0;i&lt;symbols.size();i++){</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            colors[i]=symbols.get(i)==null?null:symbols.get(i).getColor();</span>
+        }
+<span class="fc" id="L148">        return colors;</span>
+    }
+
+    /**
+     * Returns the symbol (color) currently visible in the window.
+     * @return name of the visible symbol, or null if the wheel is empty.
+     */
+    public String currentSymbol(){
+<span class="pc bpc" id="L156" title="2 of 6 branches missed.">        if(current&lt;0||current&gt;=symbols.size()||symbols.get(current)==null){</span>
+<span class="fc" id="L157">            return null;</span>
+        }
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if(!symbols.get(current).isShown()){</span>
+<span class="fc" id="L160">            return null;</span>
+        }
+<span class="fc" id="L162">        return symbols.get(current).getColor();</span>
+    }
+    /**
+      * Sets a normal symbol in the fixed slot at the given index.
+      * @param index fixed slot index (base 0).
+      * @param symbolColor color/name of the symbol to place.
+      */
+     public void setSymbol(int index, String symbolColor){
+<span class="fc" id="L170">         setSymbol(index,symbolColor,&quot;normal&quot;);</span>
+<span class="fc" id="L171">    }</span>
+
+    /**
+     * Sets a symbol of the given type in the fixed slot at the given index,
+     * growing the slot list with empty slots (null) if needed. The Symbol
+     * figure is created right away, but only shown if this slot becomes (or
+     * already is) the visible one. If the wheel had no visible symbol yet,
+     * this slot becomes the visible one.
+     * @param index fixed slot index (base 0).
+     * @param symbolColor color/name of the symbol to place.
+     * @param type type of symbol: &quot;normal&quot;, &quot;shy&quot; or &quot;ephemeral&quot;.
+     */
+    public void setSymbol(int index, String symbolColor, String type){
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        while(symbols.size()&lt;=index){</span>
+<span class="fc" id="L185">            symbols.add(null);</span>
+        }
+<span class="fc" id="L187">        int cx=xBase+WIDTH/2;</span>
+<span class="fc" id="L188">        int cy=yBase+HEIGHT/2;</span>
+<span class="fc" id="L189">        symbols.set(index,SymbolFactory.create(type,symbolColor,cx,cy));</span>
+<span class="pc bpc" id="L190" title="1 of 4 branches missed.">        if(current&lt;0||symbols.get(current)==null){</span>
+<span class="fc" id="L191">            current=index;</span>
+<span class="fc" id="L192">            showCurrent();</span>
+        }
+<span class="fc" id="L194">    }</span>
+    public boolean remove(){
+<span class="fc" id="L196">        return true;</span>
+    }
+    /**
+     * Removes a symbol from the wheel, leaving its fixed slot empty (null).
+     * If the removed symbol was the visible one, the window moves to the next
+     * occupied slot, or shows nothing if the wheel becomes empty.
+     * @param symbolColor color/name of the symbol to remove.
+     */
+    public void delSymbol(String symbolColor){
+<span class="fc" id="L205">        int idx=indexOfColor(symbolColor);</span>
+<span class="fc bfc" id="L206" title="All 4 branches covered.">        if(!isActionOk(idx&lt;0)){</span>
+<span class="fc" id="L207">            return;</span>
+        }
+<span class="fc" id="L209">        symbols.get(idx).makeInvisible();</span>
+<span class="fc" id="L210">        symbols.set(idx,null);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if(idx==current){</span>
+<span class="fc" id="L212">            current=nextOccupied(idx);</span>
+<span class="fc" id="L213">            showCurrent();</span>
+        }
+<span class="fc" id="L215">    }</span>
+
+    /**
+     * Places (fixes) a given symbol as the visible one.
+     * @param symbolColor color/name of the symbol to show.
+     */
+    public void placeSymbol(String symbolColor){
+<span class="fc bfc" id="L222" title="All 2 branches covered.">        if(isLocked){</span>
+<span class="fc" id="L223">            return;</span>
+        }
+<span class="fc" id="L225">        int idx=indexOfColor(symbolColor);</span>
+<span class="fc bfc" id="L226" title="All 4 branches covered.">        if(!isActionOk(idx&lt;0)){</span>
+<span class="fc" id="L227">            return;</span>
+        }
+<span class="fc" id="L229">        hideCurrent();</span>
+<span class="fc" id="L230">        current=idx;</span>
+<span class="fc" id="L231">        showCurrent();</span>
+<span class="fc" id="L232">    }</span>
+
+    /**
+     * Finds the slot index whose symbol has the given color.
+     * @param symbolColor color/name to search for.
+     * @return index of the matching slot, or -1 if none matches.
+     */
+    private int indexOfColor(String symbolColor){
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        for(int i=0;i&lt;symbols.size();i++){</span>
+<span class="fc" id="L241">            Symbol s=symbols.get(i);</span>
+<span class="fc bfc" id="L242" title="All 4 branches covered.">            if(s!=null&amp;&amp;s.getColor().equals(symbolColor)){</span>
+<span class="fc" id="L243">                return i;</span>
+            }
+        }
+<span class="fc" id="L246">        return -1;</span>
+    }
+
+    /**
+     * Finds the next occupied slot after the given one, wrapping around.
+     * @param from slot to start searching after.
+     * @return index of the next occupied slot, or -1 if none is occupied.
+     */
+    private int nextOccupied(int from){
+<span class="fc" id="L255">        int n=symbols.size();</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if(n==0){</span>
+<span class="fc" id="L257">            return -1;</span>
+        }
+<span class="fc bfc" id="L259" title="All 2 branches covered.">        for(int step=1;step&lt;=n;step++){</span>
+<span class="fc" id="L260">            int i=((from+step)%n+n)%n;</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">            if(symbols.get(i)!=null){</span>
+<span class="fc" id="L262">                return i;</span>
+            }
+        }
+<span class="fc" id="L265">        return -1;</span>
+    }
+
+    /**
+     * Finds the previous occupied slot before the given one, wrapping around.
+     * @param from slot to start searching before.
+     * @return index of the previous occupied slot, or -1 if none is occupied.
+     */
+    private int prevOccupied(int from){
+<span class="fc" id="L274">        int n=symbols.size();</span>
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">        if(n==0){</span>
+<span class="nc" id="L276">            return -1;</span>
+        }
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        for(int step=1;step&lt;=n;step++){</span>
+<span class="fc" id="L279">            int i=((from-step)%n+n)%n;</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            if(symbols.get(i)!=null){</span>
+<span class="fc" id="L281">                return i;</span>
+            }
+        }
+<span class="fc" id="L284">        return -1;</span>
+    }
+
+    /**
+     * Moves the window to the given slot. The symbol that lands in the window
+     * turns (a shy symbol hides or shows up, an ephemeral one shrinks; a normal
+     * symbol does nothing) and then it is drawn if it is showing.
+     * @param next slot that becomes the visible one.
+     */
+    private void landOn(int next){
+<span class="fc" id="L294">        hideCurrent();</span>
+<span class="fc" id="L295">        current=next;</span>
+<span class="fc" id="L296">        symbols.get(current).turn();</span>
+<span class="fc" id="L297">        showCurrent();</span>
+<span class="fc" id="L298">    }</span>
+
+    /**
+     * Hides the currently visible symbol figure, if any.
+     */
+    private void hideCurrent(){
+<span class="pc bpc" id="L304" title="2 of 6 branches missed.">        if(current&gt;=0&amp;&amp;current&lt;symbols.size()&amp;&amp;symbols.get(current)!=null){</span>
+<span class="fc" id="L305">            symbols.get(current).makeInvisible();</span>
+        }
+<span class="fc" id="L307">    }</span>
+
+    /**
+     * Shows the currently visible symbol figure, only if the wheel itself
+     * is visible.
+     */
+    private void showCurrent(){
+<span class="pc bpc" id="L314" title="7 of 8 branches missed.">        if(isVisible&amp;&amp;current&gt;=0&amp;&amp;current&lt;symbols.size()&amp;&amp;symbols.get(current)!=null){</span>
+<span class="nc" id="L315">            symbols.get(current).makeVisible();</span>
+        }
+<span class="fc" id="L317">    }</span>
+
+    /**
+     * Tells whether an action is valid (pattern used by the original design).
+     * @param validation condition that invalidates the action (true=not valid).
+     * @return true if the action can be performed; false otherwise.
+     */
+    private boolean isActionOk(boolean validation){
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        return !validation;</span>
+    }
+
+    /**
+     * Returns the cell (position) of the wheel.
+     * @return position of the wheel.
+     */
+    public int getPosition(){
+<span class="fc" id="L333">        return position;</span>
+    }
+    /**
+     * Tells whether this wheel has a slot with the given color.
+     * @param color the color to look for.
+     * @return true if the wheel has that color; false otherwise.
+     */
+    public boolean hasColor(String color){
+<span class="fc bfc" id="L341" title="All 2 branches covered.">        return indexOfColor(color)&gt;=0;</span>
+    }
+
+    /**
+     * Tells whether the wheel is locked.
+     * @return true if the wheel is locked; false otherwise.
+     */
+    public boolean isLocked(){
+<span class="fc" id="L349">        return isLocked;</span>
+    }
+
+    /**
+     * Tells whether this wheel is allowed to move (spin, be placed or swapped).
+     * A locked wheel cannot move.
+     * @return true if the wheel can move; false if it is locked.
+     */
+    public boolean canMove(){
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        return !isLocked;</span>
+    }
+    /**
+     * Returns the color of the wheel frame. Each kind of wheel can override
+     * it so it is easy to tell apart on screen. A locked wheel is always
+     * shown dark, whatever its kind.
+     * @return color of the frame.
+     */
+    protected String frameColor(){
+<span class="fc" id="L367">        return &quot;lightGray&quot;;</span>
+    }
+
+    public void lock(){
+<span class="fc" id="L371">        isLocked=true;</span>
+<span class="fc" id="L372">        body.changeColor(&quot;darkGray&quot;);</span>
+<span class="fc" id="L373">        refreshFront();</span>
+<span class="fc" id="L374">    }</span>
+    public void unLock(){
+<span class="fc" id="L376">        isLocked=false;</span>
+<span class="fc" id="L377">        body.changeColor(frameColor());</span>
+<span class="fc" id="L378">        refreshFront();</span>
+<span class="fc" id="L379">    }</span>
+
+    /**
+     * Redraws the window and the current symbol on top of the body, so that
+     * after the body changes color (for example when locking) the symbol is
+     * not covered by the frame.
+     */
+    private void refreshFront(){
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">        if(isVisible){</span>
+<span class="nc" id="L388">            window.makeVisible();</span>
+<span class="nc" id="L389">            showCurrent();</span>
+        }
+<span class="fc" id="L391">    }</span>
+    /**
+     * Moves the wheel to a new grid position, redrawing its body, window and
+     * all its symbols at the coordinates of the new cell. Each symbol keeps
+     * its type (normal, shy or ephemeral).
+     * @param newPos new position (cell) of the wheel.
+     */
+    public void moveTo(int newPos){
+<span class="fc" id="L399">        boolean wasVisible=isVisible;</span>
+<span class="fc" id="L400">        String[] colors=getSymbolsColor();</span>
+<span class="fc" id="L401">        String[] types=getSymbolsType();</span>
+<span class="fc" id="L402">        int savedCurrent=current;</span>
+<span class="fc" id="L403">        makeInvisible();</span>
+<span class="fc" id="L404">        position=newPos;</span>
+<span class="fc" id="L405">        createWheel(newPos);</span>
+<span class="fc" id="L406">        symbols=new ArrayList&lt;Symbol&gt;();</span>
+<span class="fc" id="L407">        current=-1;</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        for(int i=0;i&lt;colors.length;i++){</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">            if(colors[i]!=null){</span>
+<span class="fc" id="L410">                setSymbol(i,colors[i],types[i]);</span>
+            }
+        }
+<span class="fc" id="L413">        current=savedCurrent;</span>
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        if(wasVisible){</span>
+<span class="nc" id="L415">            makeVisible();</span>
+        }
+<span class="fc" id="L417">    }</span>
+
+    public String[] getSymbolsType(){
+<span class="fc" id="L420">        String[] types=new String[symbols.size()];</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        for(int i=0;i&lt;symbols.size();i++){</span>
+<span class="fc bfc" id="L422" title="All 2 branches covered.">            types[i]=symbols.get(i)==null?null:symbols.get(i).getType();</span>
+        }
+<span class="fc" id="L424">        return types;</span>
+    } 
+
+    public boolean canSwap(){
+<span class="fc bfc" id="L428" title="All 2 branches covered.">        return !isLocked;</span>
+     }
+    /**
+    * Tells whether this wheel is a wild wheel, which matches any symbol.
+    * Wild wheels override it to answer true.
+    * @return false for a normal wheel.
+    */
+    public boolean isWild(){
+<span class="fc" id="L436">        return false;</span>
+    }
+
+    /**
+     * Returns the symbol placed in a slot of the wheel.
+     * @param index fixed slot index (base 0).
+     * @return the symbol in that slot, or null if the slot is empty or out of range.
+     */
+    public Symbol getSymbol(int index){
+<span class="pc bpc" id="L445" title="2 of 4 branches missed.">        if(index&lt;0||index&gt;=symbols.size()){</span>
+<span class="nc" id="L446">            return null;</span>
+        }
+<span class="fc" id="L448">        return symbols.get(index);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

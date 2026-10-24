@@ -1,4 +1,7 @@
+package domain;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Solves the ICPC marathon problem (Slot Machine) using a SlotMachine as a
@@ -17,12 +20,13 @@ import java.util.ArrayList;
  * @author Ruben Felipe Bustos Carabante.
  * @version 1.0
  */
-public class SlotMachineContest
+public final class SlotMachineContest
 {
     /**
-     * Default constructor.
+     * The contest is only a group of static methods, so it is not created.
      */
-    public SlotMachineContest(){
+    private SlotMachineContest(){
+        // utility class: it is never instantiated
     }
 
     /**
@@ -69,7 +73,7 @@ public class SlotMachineContest
      * @return the actions {wheel, steps} performed.
      */
     private static int[][] play(SlotMachine m, int n){
-        ArrayList<int[]> actions=new ArrayList<int[]>();
+        List<int[]> actions=new ArrayList<int[]>();
         separateSymbols(m,n,actions);
         int[] next=wheelOrder(m,n);
         alignWheels(m,n,next,actions);
@@ -85,7 +89,7 @@ public class SlotMachineContest
      * @param n number of wheels.
      * @param actions list where the applied actions are recorded.
      */
-    private static void separateSymbols(SlotMachine m, int n, ArrayList<int[]> actions){
+    private static void separateSymbols(SlotMachine m, int n, List<int[]> actions){
         for(int i=1;i<=n;i++){
             int best=0;
             int bestDistinct=m.distinctSymbols();
@@ -132,7 +136,7 @@ public class SlotMachineContest
                 }
                 m.spin(a,1);
                 m.spin(b,-1);
-                boolean same=(m.distinctSymbols()==n);
+                boolean same=m.distinctSymbols()==n;
                 m.spin(b,1);
                 m.spin(a,-1);
                 if(same){
@@ -153,7 +157,7 @@ public class SlotMachineContest
      * @param next the cyclic order from wheelOrder.
      * @param actions list where the applied actions are recorded.
      */
-    private static void alignWheels(SlotMachine m, int n, int[] next, ArrayList<int[]> actions){
+    private static void alignWheels(SlotMachine m, int n, int[] next, List<int[]> actions){
         boolean[] done=new boolean[n+1];
         done[1]=true;
         int node=next[1];
@@ -229,7 +233,7 @@ public class SlotMachineContest
         String[] catalog=machine.symbols();
         String[] shown=machine.configuration();
 
-        ArrayList<Integer> occupied=new ArrayList<Integer>();
+        List<Integer> occupied=new ArrayList<Integer>();
         for(int i=0;i<catalog.length;i++){
             if(catalog[i]!=null){
                 occupied.add(i);
@@ -269,7 +273,7 @@ public class SlotMachineContest
         }
 
         // spin each wheel straight to the target
-        ArrayList<int[]> actions=new ArrayList<int[]>();
+        List<int[]> actions=new ArrayList<int[]>();
         for(int w=0;w<shown.length;w++){
             int steps=(target-slot[w]+k)%k;
             if(steps>0){
@@ -294,6 +298,7 @@ public class SlotMachineContest
         try{
             Thread.sleep(millis);
         }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
         }
     }
 }

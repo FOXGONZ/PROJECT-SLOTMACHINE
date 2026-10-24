@@ -1,19 +1,29 @@
-import javax.swing.*;
-import java.awt.*;
+package domain;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Shape;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /**
  * Canvas is a class to allow for simple graphical drawing on a canvas.
  * This is a modification of the general purpose Canvas, specially made for
- * the BlueJ "shapes" example. 
+ * the BlueJ "shapes" example.
  *
  * @author: Bruce Quig
  * @author: Michael Kolling (mik)
  *
  * @version: 1.6 (shapes)
  */
-public class Canvas{
+public final class Canvas{
     // Note: The implementation of this class (specifically the handling of
     // shape identity and colors) is slightly more complex than necessary. This
     // is done on purpose to keep the interface and instance fields of the
@@ -23,10 +33,11 @@ public class Canvas{
 
     /**
      * Factory method to get the canvas singleton object.
+     * @return the only canvas of the program.
      */
-    public static Canvas getCanvas(){
+    public static synchronized Canvas getCanvas(){
         if(canvasSingleton == null) {
-            canvasSingleton = new Canvas("BlueJ Shapes Demo", 1500, 750, 
+            canvasSingleton = new Canvas("BlueJ Shapes Demo", 1500, 750,
                                          Color.white);
         }
         canvasSingleton.setVisible(true);
@@ -35,20 +46,20 @@ public class Canvas{
 
     //  ----- instance part -----
 
-    private JFrame frame;
-    private CanvasPane canvas;
+    private final JFrame frame;
+    private final CanvasPane canvas;
     private Graphics2D graphic;
-    private Color backgroundColour;
+    private final Color backgroundColour;
     private Image canvasImage;
-    private List <Object> objects;
-    private HashMap <Object,ShapeDescription> shapes;
-    
+    private final List<Object> objects;
+    private final Map<Object,ShapeDescription> shapes;
+
     /**
      * Create a Canvas.
      * @param title  title to appear in Canvas Frame
      * @param width  the desired width for the canvas
      * @param height  the desired height for the canvas
-     * @param bgClour  the desired background colour of the canvas
+     * @param bgColour  the desired background colour of the canvas
      */
     private Canvas(String title, int width, int height, Color bgColour){
         frame = new JFrame();
@@ -58,8 +69,8 @@ public class Canvas{
         canvas.setPreferredSize(new Dimension(width, height));
         backgroundColour = bgColour;
         frame.pack();
-        objects = new ArrayList <Object>();
-        shapes = new HashMap <Object,ShapeDescription>();
+        objects = new ArrayList<Object>();
+        shapes = new HashMap<Object,ShapeDescription>();
     }
 
     /**
@@ -67,7 +78,7 @@ public class Canvas{
      * when made visible. This method can also be used to bring an already
      * visible canvas to the front of other windows.
      * @param visible  boolean value representing the desired visibility of
-     * the canvas (true or false) 
+     * the canvas (true or false)
      */
     public void setVisible(boolean visible){
         if(graphic == null) {
@@ -83,25 +94,26 @@ public class Canvas{
         frame.setVisible(visible);
     }
 
+    // Note: this is a slightly backwards way of maintaining the shape
+    // objects. It is carefully designed to keep the visible shape interfaces
+    // in this project clean and simple for educational purposes.
+
     /**
      * Draw a given shape onto the canvas.
      * @param  referenceObject  an object to define identity for this shape
      * @param  color            the color of the shape
      * @param  shape            the shape object to be drawn on the canvas
      */
-     // Note: this is a slightly backwards way of maintaining the shape
-     // objects. It is carefully designed to keep the visible shape interfaces
-     // in this project clean and simple for educational purposes.
     public void draw(Object referenceObject, String color, Shape shape){
         objects.remove(referenceObject);   // just in case it was already there
         objects.add(referenceObject);      // add at the end
         shapes.put(referenceObject, new ShapeDescription(shape, color));
         redraw();
     }
- 
+
     /**
      * Erase a given shape's from the screen.
-     * @param  referenceObject  the shape object to be erased 
+     * @param  referenceObject  the shape object to be erased
      */
     public void erase(Object referenceObject){
         objects.remove(referenceObject);   // just in case it was already there
@@ -110,69 +122,82 @@ public class Canvas{
     }
 
     /**
-     * Set the foreground colour of the Canvas.
-     * @param  newColour   the new colour for the foreground of the Canvas 
+     * Set the foreground colour of the Canvas. Accepts the named colors of
+     * the shapes and hexadecimal colors like "#3fae1c"; any other value is
+     * drawn in black.
+     * @param  colorString   the new colour for the foreground of the Canvas
      */
     public void setForegroundColor(String colorString){
-        if(colorString!=null&&colorString.matches("#[0-9a-fA-F]{6}")){
-            graphic.setColor(Color.decode(colorString));
-            return;
+        graphic.setColor(toColor(colorString));
+    }
+
+    /**
+     * Translates the name of a color into a Color.
+     * @param colorString name of the color or hexadecimal color.
+     * @return the corresponding Color; black if it is unknown.
+     */
+    private static Color toColor(String colorString){
+        if(colorString == null){
+            return Color.black;
         }
-        if(colorString.equals("red"))
-            graphic.setColor(Color.red);
-        else if(colorString.equals("black"))
-            graphic.setColor(Color.black);
-        else if(colorString.equals("blue"))
-            graphic.setColor(Color.blue);
-        else if(colorString.equals("yellow"))
-            graphic.setColor(Color.yellow);
-        else if(colorString.equals("green"))
-            graphic.setColor(Color.green);
-        else if(colorString.equals("magenta"))
-            graphic.setColor(Color.magenta);
-        else if(colorString.equals("white"))
-            graphic.setColor(Color.white);
-        else if(colorString.equals("orange"))
-            graphic.setColor(Color.orange);
-        else if(colorString.equals("pink"))
-            graphic.setColor(Color.pink);
-        else if(colorString.equals("cyan"))
-            graphic.setColor(Color.cyan);
-        else if(colorString.equals("gray"))
-            graphic.setColor(Color.gray);
-        else if(colorString.equals("lightGray"))
-            graphic.setColor(Color.lightGray);
-        else if(colorString.equals("darkGray"))
-            graphic.setColor(Color.darkGray);
-        else
-            graphic.setColor(Color.black);
+        if(colorString.matches("#[0-9a-fA-F]{6}")){
+            return Color.decode(colorString);
+        }
+        switch(colorString){
+            case "red":
+                return Color.red;
+            case "blue":
+                return Color.blue;
+            case "yellow":
+                return Color.yellow;
+            case "green":
+                return Color.green;
+            case "magenta":
+                return Color.magenta;
+            case "white":
+                return Color.white;
+            case "orange":
+                return Color.orange;
+            case "pink":
+                return Color.pink;
+            case "cyan":
+                return Color.cyan;
+            case "gray":
+                return Color.gray;
+            case "lightGray":
+                return Color.lightGray;
+            case "darkGray":
+                return Color.darkGray;
+            default:
+                return Color.black;
+        }
     }
 
     /**
      * Wait for a specified number of milliseconds before finishing.
      * This provides an easy way to specify a small delay which can be
      * used when producing animations.
-     * @param  milliseconds  the number 
+     * @param  milliseconds  the number
      */
     public void wait(int milliseconds){
         try{
             Thread.sleep(milliseconds);
-        } catch (Exception e){
-            // ignoring exception at the moment
+        } catch (InterruptedException e){
+            Thread.currentThread().interrupt();
         }
     }
 
     /**
-     * Redraw ell shapes currently on the Canvas.
+     * Redraw all shapes currently on the Canvas.
      */
     private void redraw(){
         erase();
-        for(Iterator i=objects.iterator(); i.hasNext(); ) {
-                       shapes.get(i.next()).draw(graphic);
+        for(Object shape : objects){
+            shapes.get(shape).draw(graphic);
         }
         canvas.repaint();
     }
-       
+
     /**
      * Erase the whole canvas. (Does not repaint.)
      */
@@ -180,36 +205,44 @@ public class Canvas{
         Color original = graphic.getColor();
         graphic.setColor(backgroundColour);
         Dimension size = canvas.getSize();
-        graphic.fill(new java.awt.Rectangle(0, 0, size.width, size.height));
+        graphic.fillRect(0, 0, size.width, size.height);
         graphic.setColor(original);
     }
 
-
-    /************************************************************************
+    /**
      * Inner class CanvasPane - the actual canvas component contained in the
      * Canvas frame. This is essentially a JPanel with added capability to
      * refresh the image drawn on it.
      */
-    private class CanvasPane extends JPanel{
+    private final class CanvasPane extends JPanel{
+        @Override
         public void paint(Graphics g){
             g.drawImage(canvasImage, 0, 0, null);
         }
     }
-    
-    /************************************************************************
-     * Inner class CanvasPane - the actual canvas component contained in the
-     * Canvas frame. This is essentially a JPanel with added capability to
-     * refresh the image drawn on it.
-     */
-    private class ShapeDescription{
-        private Shape shape;
-        private String colorString;
 
-        public ShapeDescription(Shape shape, String color){
+    /**
+     * Inner class ShapeDescription - a shape together with the color it is
+     * drawn with.
+     */
+    private final class ShapeDescription{
+        private final Shape shape;
+        private final String colorString;
+
+        /**
+         * Creates the description of a shape.
+         * @param shape the shape to draw.
+         * @param color the color of the shape.
+         */
+        ShapeDescription(Shape shape, String color){
             this.shape = shape;
             colorString = color;
         }
 
+        /**
+         * Draws the shape with its color.
+         * @param graphic where to draw.
+         */
         public void draw(Graphics2D graphic){
             setForegroundColor(colorString);
             graphic.draw(shape);

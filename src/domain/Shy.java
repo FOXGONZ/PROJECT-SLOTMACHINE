@@ -1,3 +1,5 @@
+package domain;
+
 /**
  * A shy symbol. Each time it lands in the window of its wheel it changes its
  * mind: if it was showing it hides, and if it was hidden it shows up again.

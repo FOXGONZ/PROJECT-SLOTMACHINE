@@ -1,3 +1,5 @@
+package domain;
+
     /**
  * A symbol of the slot machine.
  * 
@@ -28,8 +30,8 @@ public class Symbol
         figure=new Circle();
         figure.changeSize(SIZE);
         figure.changeColor(color);
-        figure.moveHorizontal((cx+70-SIZE/2)-START_X);
-        figure.moveVertical((cy+20-SIZE/2)-START_Y);
+        figure.moveHorizontal(cx+70-SIZE/2-START_X);
+        figure.moveVertical(cy+20-SIZE/2-START_Y);
     }
     
     /**
@@ -45,8 +47,12 @@ public class Symbol
     public void makeInvisible(){
         figure.makeInvisible();
     }
+    /**
+     * Returns the type of the symbol.
+     * @return "normal".
+     */
     public String getType(){
-       return "normal";
+        return "normal";
     }
 
     /**
@@ -57,7 +63,22 @@ public class Symbol
     public boolean isShown(){
         return true;
     }
-    public void turn(){}
+    /**
+     * Called each time the wheel lands on the symbol. A normal symbol does
+     * not change; Shy and Ephemeral override it.
+     */
+    public void turn(){
+        // a normal symbol does not react when the wheel lands on it
+    }
+
+    /**
+     * Returns the diameter of the symbol.
+     * @return size of the symbol in pixels.
+     */
+    public int getSize(){
+        return SIZE;
+    }
+
     /**
      * Returns the color/name of the symbol.
      * @return color of the symbol.

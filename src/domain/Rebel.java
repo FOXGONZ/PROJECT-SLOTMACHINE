@@ -1,3 +1,5 @@
+package domain;
+
 /**
  * A rebel wheel: it cannot be locked, swapped or deleted. Apart from that it
  * behaves like a normal wheel. Its frame is orange.
@@ -21,6 +23,7 @@ public class Rebel extends Wheel
      */
     @Override
     public void lock(){
+        // a rebel wheel ignores the lock on purpose
     }
 
     /**

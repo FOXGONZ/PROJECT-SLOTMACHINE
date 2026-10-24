@@ -1,4 +1,10 @@
+package domain;
+
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import javax.swing.JOptionPane;
 
 /**
@@ -26,7 +32,7 @@ public class SlotMachine
     private Circle handle;
     private Rectangle winnerLight;
     private Rectangle base;
-    private ArrayList<Wheel> wheels;
+    private List<Wheel> wheels;
     private boolean isVisible;
     private boolean lastActionOk;
 
@@ -58,8 +64,8 @@ public class SlotMachine
         if(n>50){
             n=50;
         }
-        java.util.Random rand=new java.util.Random();
-        java.util.HashSet<String> usedColors=new java.util.HashSet<String>();
+        Random rand=new Random();
+        Set<String> usedColors=new HashSet<String>();
         String[] colors=new String[n];
         int added=0;
         while(added<n){
@@ -141,7 +147,7 @@ public class SlotMachine
      * @param pos position (cell) of the new wheel.
      */
     public void addWheel(String type, int pos){
-        if(!isActionOk(!isOneOf(type,new String[]{"normal","rebel","lefty","wild"}),"Tipo de rueda no valido: "+type)){
+        if(!isActionOk(!WheelFactory.isValidType(type),"Tipo de rueda no valido: "+type)){
             return;
         }
         if(pos<1){
@@ -153,7 +159,7 @@ public class SlotMachine
         if(!isActionOk(findWheel(pos)!=null,"Ya existe una rueda en la posicion "+pos)){
             return;
         }
-        Wheel w=newWheel(type,pos);
+        Wheel w=WheelFactory.create(type,pos,wheels);
         Wheel source=firstWheel();
         if(source!=null){
             String[] cat=source.getSymbolsColor();
@@ -210,7 +216,7 @@ public class SlotMachine
      * @param color color of the symbol to add.
      */
     public void addSymbol(String type, int pos, String color){
-        if(!isActionOk(!isOneOf(type,new String[]{"normal","shy","ephemeral"}),"Tipo de simbolo no valido: "+type)){
+        if(!isActionOk(!SymbolFactory.isValidType(type),"Tipo de simbolo no valido: "+type)){
             return;
         }
         if(!isActionOk(!isValidColor(color),"Color de simbolo no valido: "+color)){
@@ -320,7 +326,7 @@ public class SlotMachine
      * @return number of distinct symbols currently shown.
      */
     public int distinctSymbols(){
-        ArrayList<String> seen=new ArrayList<String>();
+        List<String> seen=new ArrayList<String>();
         for(String s:configuration()){
             if(s!=null&&!seen.contains(s)){
                 seen.add(s);
@@ -427,6 +433,7 @@ public class SlotMachine
         try{
             Thread.sleep(millis);
             }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -452,40 +459,6 @@ public class SlotMachine
     }
 
     /**
-     * Creates a wheel of the given type.
-     * @param type "normal", "rebel", "lefty" or "wild".
-     * @param pos position (cell) of the wheel.
-     * @return the new wheel.
-     */
-    private Wheel newWheel(String type, int pos){
-        if(type.equals("rebel")){
-            return new Rebel(pos);
-        }
-        if(type.equals("lefty")){
-            return new Lefty(pos,wheels);
-        }
-        if(type.equals("wild")){
-            return new WildWheel(pos,wheels);
-        }
-        return new Wheel(pos);
-    }
-
-    /**
-     * Tells whether a value is one of the given options.
-     * @param value value to check.
-     * @param options allowed values.
-     * @return true if value is one of the options; false otherwise.
-     */
-    private boolean isOneOf(String value, String[] options){
-        for(String o:options){
-            if(o.equals(value)){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Finds the wheel at a given position.
      * @param pos position searched.
      * @return the wheel found, or null if it does not exist.
@@ -503,8 +476,8 @@ public class SlotMachine
      * Returns the wheels ordered by their position (cell).
      * @return list of wheels ordered by ascending position.
      */
-    private ArrayList<Wheel> orderedWheels(){
-        ArrayList<Wheel> ordered=new ArrayList<Wheel>(wheels);
+    private List<Wheel> orderedWheels(){
+        List<Wheel> ordered=new ArrayList<Wheel>(wheels);
         ordered.sort((a,b)->Integer.compare(a.getPosition(),b.getPosition()));
         return ordered;
     }
@@ -689,7 +662,7 @@ public class SlotMachine
         if(!isActionOk(setSymbols==null,"El arreglo de simbolos es nulo")){
             return;
         }
-        ArrayList<Wheel> ordered=orderedWheels();
+        List<Wheel> ordered=orderedWheels();
         if(!isActionOk(setSymbols.length!=ordered.size(),
                 "El arreglo debe tener un simbolo por rueda ("+ordered.size()+")")){
             return;

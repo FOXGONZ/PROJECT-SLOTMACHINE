@@ -1,4 +1,6 @@
-import java.util.ArrayList;
+package domain;
+
+import java.util.List;
 
 /**
  * A wild wheel: it matches any symbol. When the machine asks which symbol it
@@ -13,14 +15,14 @@ import java.util.ArrayList;
  */
 public class WildWheel extends Wheel
 {
-    private ArrayList<Wheel> wheels;
+    private List<Wheel> wheels;
 
     /**
      * Creates a wild wheel at the given cell.
      * @param pos position (cell) of the wheel.
      * @param wheels the machine's wheels, used to find the symbol to match.
      */
-    public WildWheel(int pos, ArrayList<Wheel> wheels){
+    public WildWheel(int pos, List<Wheel> wheels){
         super(pos);
         this.wheels=wheels;
     }

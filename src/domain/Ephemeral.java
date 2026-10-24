@@ -1,3 +1,5 @@
+package domain;
+
 /**
  * An ephemeral symbol. Each time it lands in the window of its wheel it gets
  * smaller, staying centered, until it reaches a minimum size.

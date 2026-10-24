@@ -1,4 +1,7 @@
+package domain;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A wheel (Wheel) of the slot machine.
@@ -17,7 +20,7 @@ import java.util.ArrayList;
  */
 public class Wheel
 {
-    protected ArrayList<Symbol> symbols;   // symbols available in this wheel
+    protected List<Symbol> symbols;   // symbols available in this wheel
     protected int position;                // cell of the wheel inside the grid
     protected int current;                 // index of the currently visible symbol
     private boolean isVisible;
@@ -119,7 +122,7 @@ public class Wheel
         if(isLocked){
             return;
         }
-        if(symbols.size()==0){
+        if(symbols.isEmpty()){
             return;
         }
         int times=Math.abs(steps);
@@ -132,10 +135,6 @@ public class Wheel
         }
     }
 
-    /**
-     * Returns the wheel slots, including empty ones as null.
-     * @return array with the names (colors) of the symbols, null where empty.
-     */
     /**
      * Returns the colors of the wheel slots, including empty ones as null.
      * This lets the SlotMachine read the shared catalog from a wheel.
@@ -187,7 +186,7 @@ public class Wheel
         }
         int cx=xBase+WIDTH/2;
         int cy=yBase+HEIGHT/2;
-        symbols.set(index,newSymbol(type,symbolColor,cx,cy));
+        symbols.set(index,SymbolFactory.create(type,symbolColor,cx,cy));
         if(current<0||symbols.get(current)==null){
             current=index;
             showCurrent();
@@ -416,11 +415,6 @@ public class Wheel
             makeVisible();
         }
     }
-    private Symbol newSymbol(String type, String color, int cx, int cy){
-        if(type.equals("shy")){ return new Shy(color,cx,cy); }
-        if(type.equals("ephemeral")){ return new Ephemeral(color,cx,cy); }
-        return new Symbol(color,cx,cy);
-    } 
 
     public String[] getSymbolsType(){
         String[] types=new String[symbols.size()];
@@ -440,5 +434,17 @@ public class Wheel
     */
     public boolean isWild(){
         return false;
+    }
+
+    /**
+     * Returns the symbol placed in a slot of the wheel.
+     * @param index fixed slot index (base 0).
+     * @return the symbol in that slot, or null if the slot is empty or out of range.
+     */
+    public Symbol getSymbol(int index){
+        if(index<0||index>=symbols.size()){
+            return null;
+        }
+        return symbols.get(index);
     }
 }

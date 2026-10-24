@@ -1,4 +1,6 @@
-import java.util.ArrayList;
+package domain;
+
+import java.util.List;
 
 /**
  * A wheel that copies its left neighbour. When it spins, if there is a wheel
@@ -12,14 +14,14 @@ import java.util.ArrayList;
  */
 public class Lefty extends Wheel
 {
-    private ArrayList<Wheel> wheels;
+    private List<Wheel> wheels;
 
     /**
      * Creates a Lefty wheel at the given cell.
      * @param pos position (cell) of the wheel.
      * @param wheels the machine's wheels, used to find the left neighbour.
      */
-    public Lefty(int pos, ArrayList<Wheel> wheels){
+    public Lefty(int pos, List<Wheel> wheels){
         super(pos);
         this.wheels=wheels;
     }
